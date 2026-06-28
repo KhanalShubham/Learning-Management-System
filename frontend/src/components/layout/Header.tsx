@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useUIStore, type UserRole } from '@/store';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/store/auth-store';
+import { api } from '@/services/api';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Avatar } from '@/components/ui/Avatar';
 import {
@@ -293,8 +295,19 @@ export const Header = () => {
                 </button>
                 <div className="h-px bg-border/40 my-1" />
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setUserOpen(false);
+                    try {
+                      await api.post('/auth/logout');
+                    } catch {
+                      // ignore logout endpoint failure
+                    }
+                    useAuthStore.getState().clearSession();
+                    toast({
+                      title: 'Signed Out',
+                      description: 'Logged out of campus session registry successfully',
+                      variant: 'info',
+                    });
                     navigate('/login');
                   }}
                   className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-bold text-destructive hover:bg-destructive/8 transition-colors cursor-pointer"

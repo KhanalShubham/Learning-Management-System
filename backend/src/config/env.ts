@@ -10,6 +10,10 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
   JWT_SECRET: z.string().min(8, 'JWT_SECRET must be at least 8 characters long'),
   JWT_EXPIRATION: z.string().default('7d'),
+  JWT_ACCESS_SECRET: z.string().min(8).default('super-secret-access-key-change-this-in-production'),
+  JWT_REFRESH_SECRET: z.string().min(8).default('super-secret-refresh-key-change-this-in-production-refresh'),
+  JWT_ACCESS_EXPIRATION: z.string().default('15m'),
+  JWT_REFRESH_EXPIRATION: z.string().default('7d'),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'http', 'debug']).default('info'),
 });
 

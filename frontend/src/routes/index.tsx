@@ -4,6 +4,7 @@ import { createBrowserRouter } from 'react-router-dom';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AuthLayout from '@/layouts/AuthLayout';
 import PublicLayout from '@/layouts/PublicLayout';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
@@ -15,6 +16,7 @@ import { Alert } from '@/components/ui/Alert';
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Login = lazy(() => import('@/pages/Login'));
 const PublicHome = lazy(() => import('@/pages/PublicHome'));
+const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const PageLoader = () => (
@@ -59,7 +61,11 @@ export const router = createBrowserRouter([
   // Dashboard Framework Layout Routes
   {
     path: '/',
-    element: <DashboardLayout />,
+    element: (
+      <ProtectedRoute>
+        <DashboardLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -321,6 +327,16 @@ export const router = createBrowserRouter([
         ),
       },
     ],
+  },
+
+  // Unauthorized view
+  {
+    path: '/unauthorized',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <Unauthorized />
+      </Suspense>
+    ),
   },
 
   // Fallbacks

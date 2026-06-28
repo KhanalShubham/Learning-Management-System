@@ -23,8 +23,16 @@ export const MobileDrawer = () => {
     setMobileNavOpen(false);
   }, [location.pathname, setMobileNavOpen]);
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setMobileNavOpen(false);
+    try {
+      const { api } = await import('@/services/api');
+      const { useAuthStore } = await import('@/store/auth-store');
+      await api.post('/auth/logout');
+      useAuthStore.getState().clearSession();
+    } catch {
+      // ignore logout failure
+    }
     navigate('/login');
   };
 

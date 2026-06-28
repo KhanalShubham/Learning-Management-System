@@ -5,6 +5,8 @@ import * as z from 'zod';
 import { useNavigate } from 'react-router-dom';
 import { useUIStore, type UserRole } from '@/store';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/store/auth-store';
+import { api, type AxiosError } from '@/services/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -34,24 +36,38 @@ export default function Login() {
   });
 
   const onSubmit = async (data: LoginFields) => {
-    // Map email to simulated role
-    let role: UserRole = 'admin';
-    if (data.email.includes('teacher')) {
-      role = 'teacher';
-    } else if (data.email.includes('student')) {
-      role = 'student';
+    try {
+      const response = await api.post('/auth/login', {
+        email: data.email,
+        password: data.password,
+      });
+
+      const { success, data: responseData } = response.data;
+      if (success && responseData) {
+        const { user, accessToken } = responseData;
+        
+        // Save session in Zustand store
+        useAuthStore.getState().setSession(user, accessToken);
+        
+        // Sync simulated dev role to update header dropdown layout options
+        const devRole = user.role.toLowerCase() as 'admin' | 'teacher' | 'student';
+        setSimulatedRole(devRole);
+
+        toast({
+          title: 'Sign In Successful',
+          description: `Logged in as ${user.role}`,
+          variant: 'success',
+        });
+        navigate('/');
+      }
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      toast({
+        title: 'Sign In Failed',
+        description: error.response?.data?.message || 'Invalid credentials or API setup error',
+        variant: 'destructive',
+      });
     }
-
-    setSimulatedRole(role);
-    localStorage.setItem('token', 'mock_jwt_token');
-    
-    toast({
-      title: 'Sign In Successful',
-      description: `Welcome to the Deukhuri Digital Campus ERP Dashboard as ${role.toUpperCase()}`,
-      variant: 'success',
-    });
-
-    navigate('/');
   };
 
   const autofill = (email: string, role: UserRole) => {
