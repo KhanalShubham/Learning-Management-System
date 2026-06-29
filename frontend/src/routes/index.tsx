@@ -4,7 +4,8 @@ import { createBrowserRouter } from 'react-router-dom';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import AuthLayout from '@/layouts/AuthLayout';
 import PublicLayout from '@/layouts/PublicLayout';
-import ProtectedRoute from '@/components/common/ProtectedRoute';
+import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
+import { PublicRoute } from '@/features/auth/components/PublicRoute';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
@@ -45,7 +46,11 @@ export const router = createBrowserRouter([
   // Auth Layout Routes
   {
     path: '/login',
-    element: <AuthLayout />,
+    element: (
+      <PublicRoute>
+        <AuthLayout />
+      </PublicRoute>
+    ),
     children: [
       {
         index: true,

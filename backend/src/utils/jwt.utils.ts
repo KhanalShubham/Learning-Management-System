@@ -15,13 +15,13 @@ export interface RefreshJWTPayload {
 
 export const signAccessToken = (payload: UserJWTPayload): string => {
   return jwt.sign(payload, env.JWT_ACCESS_SECRET, {
-    expiresIn: env.JWT_ACCESS_EXPIRATION,
+    expiresIn: env.JWT_ACCESS_EXPIRATION as jwt.SignOptions['expiresIn'],
   });
 };
 
 export const signRefreshToken = (payload: RefreshJWTPayload): string => {
   return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
-    expiresIn: env.JWT_REFRESH_EXPIRATION,
+    expiresIn: env.JWT_REFRESH_EXPIRATION as jwt.SignOptions['expiresIn'],
   });
 };
 
