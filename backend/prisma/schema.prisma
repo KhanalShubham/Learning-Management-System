@@ -22,22 +22,24 @@ enum AuditAction {
   TOKEN_REFRESH
   PASSWORD_RESET_REQUEST
   PASSWORD_RESET_SUCCESS
+  PASSWORD_CHANGE_SUCCESS
 }
 
 // User account identity entity mapping
 model User {
-  id            String         @id @default(uuid())
-  email         String         @unique
+  id            String               @id @default(uuid())
+  email         String               @unique
   password      String
   fullName      String
   roleId        String
-  role          Role           @relation(fields: [roleId], references: [id])
-  status        UserStatus     @default(ACTIVE)
+  role          Role                 @relation(fields: [roleId], references: [id])
+  status        UserStatus           @default(ACTIVE)
   lastLogin     DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
   refreshTokens RefreshToken[]
   auditLogs     AuditLog[]
+  resetTokens   PasswordResetToken[]
 
   @@map("users")
 }
@@ -94,6 +96,252 @@ model RefreshToken {
   updatedAt  DateTime @updatedAt
 
   @@map("refresh_tokens")
+}
+
+// Password reset token storage mapping for the Forgot Password flow
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@map("password_reset_tokens")
+}
+
+// Singleton school identity, contact, and location profile record
+model SchoolProfile {
+  id            String   @id @default(uuid())
+  name          String   @default("My School")
+  shortName     String?
+  motto         String?
+  description   String?
+  phone         String?
+  email         String?
+  website       String?
+  address       String?
+  province      String?
+  district      String?
+  municipality  String?
+  ward          String?
+  postalCode    String?
+  googleMapLink String?
+  latitude      Float?
+  longitude     Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("school_profile")
+}
+
+// Singleton branding assets and document/report visual identity record
+model SchoolBranding {
+  id                    String   @id @default(uuid())
+  logoUrl               String?
+  faviconUrl            String?
+  stampUrl              String?
+  principalSignatureUrl String?
+  reportHeaderImageUrl  String?
+  reportFooterImageUrl  String?
+  primaryColor          String?
+  secondaryColor        String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("school_branding")
+}
+
+// Fixed leadership role slots available for staffing
+enum LeadershipRole {
+  PRINCIPAL
+  VICE_PRINCIPAL
+  ADMINISTRATOR
+  ACCOUNT_OFFICER
+}
+
+// School leadership directory entry mapped one-to-one per role
+model Leadership {
+  id           String         @id @default(uuid())
+  role         LeadershipRole @unique
+  name         String         @default("")
+  designation  String?
+  photoUrl     String?
+  signatureUrl String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@map("leadership")
+}
+
+// Attendance capture method options
+enum AttendanceMethod {
+  ADMIN_ONLY
+  TEACHER
+  BIOMETRIC
+}
+
+// Singleton system-wide regional and operational preferences record
+model SchoolSettings {
+  id               String           @id @default(uuid())
+  timezone         String           @default("Asia/Kathmandu")
+  language         String           @default("en")
+  currency         String           @default("NPR")
+  dateFormat       String           @default("YYYY-MM-DD")
+  timeFormat       String           @default("HH:mm")
+  weekStartsOn     Int              @default(0)
+  defaultPassword  String           @default("Password123")
+  attendanceMethod AttendanceMethod @default(ADMIN_ONLY)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@map("school_settings")
+}
+
+// Configurable academic term catalog entry (terminals, semesters, etc.)
+model AcademicTerm {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("academic_terms")
+}
+
+// Configurable grading scale band entry
+model GradingScale {
+  id            String   @id @default(uuid())
+  grade         String   @unique
+  minPercentage Float
+  maxPercentage Float
+  gpa           Float?
+  description   String?
+  order         Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("grading_scales")
+}
+
+// Academic year lifecycle status options
+enum AcademicYearStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+// School academic year catalog with one designated current year
+model AcademicYear {
+  id        String             @id @default(uuid())
+  label     String             @unique
+  startDate DateTime
+  endDate   DateTime
+  isCurrent Boolean            @default(false)
+  status    AcademicYearStatus @default(ACTIVE)
+  classes   Class[]
+  examTypes ExamType[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@map("academic_years")
+}
+
+// Reference-data lifecycle status shared by Academic Structure entities
+enum RecordStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+// School grade/class catalog entry scoped to a single academic year
+model Class {
+  id             String         @id @default(uuid())
+  academicYearId String
+  academicYear   AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  name           String
+  displayOrder   Int
+  description    String?
+  status         RecordStatus   @default(ACTIVE)
+  sections       Section[]
+  classSubjects  ClassSubject[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([academicYearId, name])
+  @@map("classes")
+}
+
+// Class subdivision entry (e.g. Section A, B, C)
+model Section {
+  id         String       @id @default(uuid())
+  classId    String
+  class      Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  name       String
+  capacity   Int?
+  roomNumber String?
+  status     RecordStatus @default(ACTIVE)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@unique([classId, name])
+  @@map("sections")
+}
+
+// Global reusable subject master catalog entry
+model Subject {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  code          String?        @unique
+  description   String?
+  isOptional    Boolean        @default(false)
+  status        RecordStatus   @default(ACTIVE)
+  classSubjects ClassSubject[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("subjects")
+}
+
+// Per-class subject assignment with marks configuration
+model ClassSubject {
+  id                 String   @id @default(uuid())
+  classId            String
+  class              Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subjectId          String
+  subject            Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  fullMarks          Int
+  passMarks          Int
+  hasPractical       Boolean  @default(false)
+  theoryMarks        Int?
+  practicalMarks     Int?
+  practicalPassMarks Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([classId, subjectId])
+  @@map("class_subjects")
+}
+
+// Reusable examination template scoped to an academic year (e.g. First
+// Terminal, Mid-Term, Final, Practical). Actual scheduled exam instances
+// (ExamType x Date x Class x Section) belong to a future Examination Engine
+// and are intentionally not modeled here.
+model ExamType {
+  id             String       @id @default(uuid())
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  name           String
+  code           String?
+  description    String?
+  displayOrder   Int
+  weightage      Float
+  isPublished    Boolean      @default(false)
+  status         RecordStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([academicYearId, name])
+  @@map("exam_types")
 }
 
 // Security compliance audit logging record mapping
