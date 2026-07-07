@@ -7,6 +7,9 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 10000,
+  // Required for the browser to send/store the httpOnly refresh-token cookie,
+  // since the frontend (5173) and backend (5000) are different origins.
+  withCredentials: true,
 });
 
 // Queue to hold requests while refreshing token
@@ -105,10 +108,17 @@ api.interceptors.response.use(
         }
       } catch (refreshErr) {
         processQueue(refreshErr, null);
-        
-        // Clear auth store session (logs user out)
+
+        // A mid-session refresh failure (the user was actively authenticated,
+        // not just loading the app for the first time) means their session was
+        // revoked or expired elsewhere — surface that distinctly from "never logged in".
+        const hadActiveSession = useAuthStore.getState().isAuthenticated;
         useAuthStore.getState().clearSession();
-        
+
+        if (hadActiveSession && typeof window !== 'undefined') {
+          window.location.href = '/session-expired';
+        }
+
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

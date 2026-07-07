@@ -1,18 +1,12 @@
 import { create } from 'zustand';
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  role: string;
-  permissions: string[];
-}
+import type { User } from '@/features/auth/types';
 
 interface AuthState {
-  user: AuthUser | null;
+  user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   isInitialLoading: boolean;
-  setSession: (user: AuthUser, accessToken: string) => void;
+  setSession: (user: User, accessToken: string) => void;
   clearSession: () => void;
   setInitialLoading: (loading: boolean) => void;
 }

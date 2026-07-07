@@ -1,7 +1,6 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useEffect, useCallback } from 'react';
 import type { User, AuthContextType } from '../types';
 import { authService } from '../services/auth.service';
-import { setAccessToken } from '../api/api-client';
 import { useAuthStore } from '@/store/auth-store';
 
 /**
@@ -11,31 +10,24 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 /**
  * AuthProvider Component
- * 
- * Provides session states and auth operations to children components.
- * Manages Access Token storage and synchronizes session states with the Zustand store.
+ *
+ * Provides session state and auth operations to children components.
+ * The Zustand auth store is the single source of truth for session state
+ * (it's also read directly by the Axios interceptor during silent token
+ * refreshes) — this provider only exposes it through context and owns the
+ * imperative login/logout/bootstrap actions.
  */
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setAccessTokenState] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const user = useAuthStore((state) => state.user);
+  const accessToken = useAuthStore((state) => state.accessToken);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const isInitialLoading = useAuthStore((state) => state.isInitialLoading);
 
-  // Sync state helpers
   const setSession = useCallback((newUser: User, newToken: string) => {
-    setUser(newUser);
-    setAccessTokenState(newToken);
-    setAccessToken(newToken);
-    
-    // Bridge to Zustand store to keep legacy hooks in sync
     useAuthStore.getState().setSession(newUser, newToken);
   }, []);
 
   const clearSession = useCallback(() => {
-    setUser(null);
-    setAccessTokenState(null);
-    setAccessToken(null);
-    
-    // Bridge to Zustand store to keep legacy hooks in sync
     useAuthStore.getState().clearSession();
   }, []);
 
@@ -49,9 +41,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [setSession, clearSession]);
 
   const login = useCallback(
-    async (email: string, _role?: string) => {
+    async (email: string, password: string, rememberMe = false) => {
       try {
-        const data = await authService.login({ email, password: 'Password123' });
+        const data = await authService.login(email, password, rememberMe);
         setSession(data.user, data.accessToken);
       } catch (error) {
         clearSession();
@@ -64,6 +56,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = useCallback(async () => {
     try {
       await authService.logout();
+    } catch {
+      // Local session is cleared regardless of whether the server call succeeded.
     } finally {
       clearSession();
     }
@@ -78,9 +72,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.user, data.accessToken);
       } catch {
         clearSession();
-      } finally {
-        setIsLoading(false);
-        useAuthStore.getState().setInitialLoading(false);
       }
     };
 
@@ -90,8 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const contextValue: AuthContextType = {
     user,
     accessToken,
-    isAuthenticated: !!user,
-    isLoading,
+    isAuthenticated,
+    isLoading: isInitialLoading,
     login,
     logout,
     refreshSession,

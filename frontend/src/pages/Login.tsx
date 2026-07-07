@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useNavigate } from 'react-router-dom';
-import { useUIStore, type UserRole } from '@/store';
+import { useNavigate, Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthStore } from '@/store/auth-store';
-import { api, type AxiosError } from '@/services/api';
+import { useAuth } from '@/features/auth/hooks/useAuth';
+import { type AxiosError } from '@/services/api';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -14,7 +13,8 @@ import { Mail, Lock, Eye, EyeOff, Sparkles } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email is required').email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  rememberMe: z.boolean().optional(),
 });
 
 type LoginFields = z.infer<typeof loginSchema>;
@@ -22,8 +22,8 @@ type LoginFields = z.infer<typeof loginSchema>;
 export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const setSimulatedRole = useUIStore((state) => state.setSimulatedRole);
-  
+  const { login } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -37,29 +37,13 @@ export default function Login() {
 
   const onSubmit = async (data: LoginFields) => {
     try {
-      const response = await api.post('/auth/login', {
-        email: data.email,
-        password: data.password,
+      await login(data.email, data.password, data.rememberMe);
+      toast({
+        title: 'Sign In Successful',
+        description: 'Welcome back to Deukhuri Digital Campus.',
+        variant: 'success',
       });
-
-      const { success, data: responseData } = response.data;
-      if (success && responseData) {
-        const { user, accessToken } = responseData;
-        
-        // Save session in Zustand store
-        useAuthStore.getState().setSession(user, accessToken);
-        
-        // Sync simulated dev role to update header dropdown layout options
-        const devRole = user.role.toLowerCase() as 'admin' | 'teacher' | 'student';
-        setSimulatedRole(devRole);
-
-        toast({
-          title: 'Sign In Successful',
-          description: `Logged in as ${user.role}`,
-          variant: 'success',
-        });
-        navigate('/');
-      }
+      navigate('/');
     } catch (err) {
       const error = err as AxiosError<{ message?: string }>;
       toast({
@@ -70,12 +54,12 @@ export default function Login() {
     }
   };
 
-  const autofill = (email: string, role: UserRole) => {
+  const autofill = (email: string, password: string, role: 'super admin' | 'admin') => {
     setValue('email', email);
-    setValue('password', 'password123');
+    setValue('password', password);
     toast({
       title: 'Credentials Prefilled',
-      description: `Loaded account details for simulated ${role.toUpperCase()} profile`,
+      description: `Loaded account details for the ${role.toUpperCase()} demo profile`,
       variant: 'info',
     });
   };
@@ -120,6 +104,23 @@ export default function Login() {
             />
           </div>
 
+          <div className="flex items-center justify-between">
+            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                {...register('rememberMe')}
+              />
+              Remember me
+            </label>
+            <Link
+              to="/forgot-password"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+
           <Button type="submit" className="w-full mt-2" isLoading={isSubmitting}>
             Sign In
           </Button>
@@ -135,27 +136,20 @@ export default function Login() {
         </div>
 
         {/* Demo profiles shortcuts */}
-        <div className="grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="grid grid-cols-2 gap-2 text-center text-xs">
           <button
-            onClick={() => autofill('admin@deukhuri.edu', 'admin')}
+            onClick={() => autofill('superadmin@deukhuri.edu.np', 'SuperAdmin@123', 'super admin')}
+            className="p-2 bg-secondary/60 hover:bg-primary/10 border border-border/60 hover:border-primary/30 rounded-lg font-semibold flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95 text-foreground/80 hover:text-primary"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+            Super Admin
+          </button>
+          <button
+            onClick={() => autofill('admin@deukhuri.edu', 'Admin@123', 'admin')}
             className="p-2 bg-secondary/60 hover:bg-primary/10 border border-border/60 hover:border-primary/30 rounded-lg font-semibold flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95 text-foreground/80 hover:text-primary"
           >
             <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
             Admin
-          </button>
-          <button
-            onClick={() => autofill('teacher@deukhuri.edu', 'teacher')}
-            className="p-2 bg-secondary/60 hover:bg-primary/10 border border-border/60 hover:border-primary/30 rounded-lg font-semibold flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95 text-foreground/80 hover:text-primary"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-            Teacher
-          </button>
-          <button
-            onClick={() => autofill('student@deukhuri.edu', 'student')}
-            className="p-2 bg-secondary/60 hover:bg-primary/10 border border-border/60 hover:border-primary/30 rounded-lg font-semibold flex flex-col items-center gap-1 cursor-pointer transition-all active:scale-95 text-foreground/80 hover:text-primary"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-            Student
           </button>
         </div>
       </CardContent>

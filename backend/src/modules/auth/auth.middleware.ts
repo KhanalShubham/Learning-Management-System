@@ -25,6 +25,7 @@ export const requireAuth = (req: Request, res: Response, next: NextFunction) => 
     req.user = decoded;
     return next();
   } catch (error) {
+    
     const err = error as Error;
     if (err.name === 'TokenExpiredError') {
       return errorResponse(

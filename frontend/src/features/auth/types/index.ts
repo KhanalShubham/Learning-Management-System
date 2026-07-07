@@ -1,36 +1,50 @@
 /**
  * Authentication Types
- * 
+ *
  * Houses types, interfaces, and enums representing users, privileges,
  * and context state properties for the modular authentication feature.
  */
 
 /**
- * Valid user roles within the enterprise ERP ecosystem.
+ * Valid user roles within the ERP (Version 1: two login roles only).
  */
-export type UserRole = 'ADMIN' | 'TEACHER' | 'STUDENT';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN';
 
 /**
  * Standardized system permissions for granular security checks.
+ * Mirrors the dot-delimited permission codes seeded on the backend
+ * (see backend/prisma/seed.ts) — keep both in sync.
  */
 export type Permission =
-  | '*' // Super privileges (typically ADMIN)
-  | 'academics:read'
-  | 'academics:write'
-  | 'students:read'
-  | 'students:write'
-  | 'teachers:read'
-  | 'teachers:write'
-  | 'attendance:read'
-  | 'attendance:write'
-  | 'exams:read'
-  | 'exams:write'
-  | 'fees:read'
-  | 'fees:write'
-  | 'cms:read'
-  | 'cms:write'
-  | 'settings:read'
-  | 'settings:write';
+  | '*' // Full, unrestricted access (Super Admin only)
+  | 'users.read'
+  | 'users.write'
+  | 'roles.read'
+  | 'roles.write'
+  | 'students.read'
+  | 'students.create'
+  | 'students.update'
+  | 'students.delete'
+  | 'teachers.read'
+  | 'teachers.create'
+  | 'teachers.update'
+  | 'teachers.delete'
+  | 'attendance.mark'
+  | 'attendance.view'
+  | 'exams.publish'
+  | 'exams.enter'
+  | 'exams.view'
+  | 'certificates.generate'
+  | 'certificates.download'
+  | 'certificates.view'
+  | 'cms.publish'
+  | 'cms.edit'
+  | 'finance.read'
+  | 'finance.write'
+  | 'settings.read'
+  | 'settings.write'
+  | 'system.read'
+  | 'system.write';
 
 /**
  * Repesents an authenticated ERP user profile.
@@ -53,7 +67,7 @@ export interface AuthContextType {
   accessToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, role?: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   logout: () => Promise<void>;
   refreshSession: () => Promise<void>;
 }

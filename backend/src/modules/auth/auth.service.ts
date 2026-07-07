@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { env } from '@/config/env';
 import { IAuthRepository } from './auth.repository';
 
@@ -18,6 +19,7 @@ export interface UserJWTPayload {
  */
 export interface RefreshJWTPayload {
   id: string;
+  jti?: string;
   version?: number;
 }
 
@@ -59,9 +61,11 @@ export class AuthService {
    * Generate a signed JSON Web Refresh Token (JWT) representing session credentials.
    */
   public signRefreshToken(payload: RefreshJWTPayload): string {
-    return jwt.sign(payload, env.JWT_REFRESH_SECRET, {
-      expiresIn: env.JWT_REFRESH_EXPIRATION as jwt.SignOptions['expiresIn'],
-    });
+    return jwt.sign(
+      { ...payload, jti: crypto.randomBytes(16).toString('hex') },
+      env.JWT_REFRESH_SECRET,
+      { expiresIn: env.JWT_REFRESH_EXPIRATION as jwt.SignOptions['expiresIn'] }
+    );
   }
 
   /**
@@ -76,5 +80,22 @@ export class AuthService {
    */
   public verifyRefreshToken(token: string): RefreshJWTPayload {
     return jwt.verify(token, env.JWT_REFRESH_SECRET) as RefreshJWTPayload;
+  }
+
+  /**
+   * Generate a cryptographically random, single-use password reset token.
+   * Returns both the raw token (emailed to the user) and its SHA-256 hash (persisted).
+   */
+  public generatePasswordResetToken(): { rawToken: string; tokenHash: string } {
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = this.hashToken(rawToken);
+    return { rawToken, tokenHash };
+  }
+
+  /**
+   * Deterministically hash an opaque token for storage/lookup comparison.
+   */
+  public hashToken(token: string): string {
+    return crypto.createHash('sha256').update(token).digest('hex');
   }
 }

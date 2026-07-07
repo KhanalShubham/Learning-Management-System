@@ -19,6 +19,10 @@ export interface MappedUserProfile {
 /**
  * Interface contract declaring database query operations for the auth module.
  */
+export interface AuthUserRecord extends MappedUserProfile {
+  password: string;
+}
+
 export interface IAuthRepository {
   /**
    * Find user details by email address, including roles and permission code keys.
@@ -29,6 +33,36 @@ export interface IAuthRepository {
    * Find user details by ID, including roles and permission code keys.
    */
   findById(id: string): Promise<MappedUserProfile | null>;
+
+  /**
+   * Find a user by email, including the hashed password, for credential verification.
+   */
+  findByEmailWithPassword(email: string): Promise<AuthUserRecord | null>;
+
+  /**
+   * Update a user's stored password hash.
+   */
+  updatePassword(userId: string, passwordHash: string): Promise<void>;
+
+  /**
+   * Stamp the current timestamp as the user's most recent successful login.
+   */
+  updateLastLogin(userId: string): Promise<void>;
+
+  /**
+   * Persist a hashed password reset token for the Forgot Password flow.
+   */
+  createPasswordResetToken(data: { userId: string; tokenHash: string; expiresAt: Date }): Promise<void>;
+
+  /**
+   * Look up an unused, unexpired password reset token by its hash.
+   */
+  findValidPasswordResetToken(tokenHash: string): Promise<{ id: string; userId: string } | null>;
+
+  /**
+   * Mark a password reset token as consumed.
+   */
+  markPasswordResetTokenUsed(id: string): Promise<void>;
 
   /**
    * Record a new active user refresh token session.
@@ -140,6 +174,85 @@ export class AuthRepository implements IAuthRepository {
     });
 
     return this.mapDbUser(user);
+  }
+
+  /**
+   * Find a user by email, including the hashed password, for credential verification.
+   */
+  public async findByEmailWithPassword(email: string): Promise<AuthUserRecord | null> {
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const mapped = this.mapDbUser(user);
+    if (!mapped || !user) return null;
+
+    return { ...mapped, password: user.password };
+  }
+
+  /**
+   * Update a user's stored password hash.
+   */
+  public async updatePassword(userId: string, passwordHash: string): Promise<void> {
+    await prisma.user.update({ where: { id: userId }, data: { password: passwordHash } });
+  }
+
+  /**
+   * Stamp the current timestamp as the user's most recent successful login.
+   */
+  public async updateLastLogin(userId: string): Promise<void> {
+    await prisma.user.update({ where: { id: userId }, data: { lastLogin: new Date() } });
+  }
+
+  /**
+   * Persist a hashed password reset token for the Forgot Password flow.
+   */
+  public async createPasswordResetToken(data: {
+    userId: string;
+    tokenHash: string;
+    expiresAt: Date;
+  }): Promise<void> {
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: data.userId,
+        tokenHash: data.tokenHash,
+        expiresAt: data.expiresAt,
+      },
+    });
+  }
+
+  /**
+   * Look up an unused, unexpired password reset token by its hash.
+   */
+  public async findValidPasswordResetToken(
+    tokenHash: string
+  ): Promise<{ id: string; userId: string } | null> {
+    const record = await prisma.passwordResetToken.findFirst({
+      where: {
+        tokenHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    return record ? { id: record.id, userId: record.userId } : null;
+  }
+
+  /**
+   * Mark a password reset token as consumed.
+   */
+  public async markPasswordResetTokenUsed(id: string): Promise<void> {
+    await prisma.passwordResetToken.update({ where: { id }, data: { usedAt: new Date() } });
   }
 
   /**
