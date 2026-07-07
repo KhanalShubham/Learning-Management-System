@@ -5,6 +5,7 @@ import { uploadImageBuffer, uploadDocumentBuffer } from '@/config/cloudinary';
 import { StudentRepository } from './student.repository';
 import { StudentService } from './student.service';
 import { AcademicYearRepository } from '@/modules/system-config/academic-year.repository';
+import { SchoolProfileRepository } from '@/modules/system-config/school-profile.repository';
 import { ClassRepository } from '@/modules/academic-structure/class.repository';
 import { SectionRepository } from '@/modules/academic-structure/section.repository';
 import {
@@ -24,6 +25,7 @@ const studentRepository = new StudentRepository();
 const studentService = new StudentService(
   studentRepository,
   new AcademicYearRepository(),
+  new SchoolProfileRepository(),
   new ClassRepository(),
   new SectionRepository()
 );

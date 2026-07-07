@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.1] - 2026-07-08
+### Changed
+- **Student Admission Engine reworked** before any real data existed against it — v0.5.0's design was revised based on a closer review of what the workflow needs long-term:
+  - **Added `Enrollment`** (Student × AcademicYear × Class × Section × rollNumber): class/section placement moved off `Student` entirely. The v0.5.0 design would have overwritten a student's placement on every promotion with no history — `Enrollment` is one row per academic year instead, so past placements, roll numbers, and (eventually) report cards survive year-over-year moves.
+  - **Split `fullName` into `firstName`/`middleName`/`lastName`** for certificate/report-card generation.
+  - **Added `rollNumber`** on `Enrollment` (per year/section, not a permanent student attribute), unique per `(academicYearId, sectionId)`; duplicate roll numbers now return a clean `409` instead of a raw constraint error.
+  - **Added permanent/temporary address fields** on `Student` (was a single address block).
+  - **Changed the admission number format** from `{academicYear.label}-{seq}` to `{schoolProfile.shortName}-{academicYear.startDate's year}-{seq}` (e.g. `DPS-2025-0001`), falling back to `SCH-` if no school short code is configured yet — sourced from the System Configuration Engine's `SchoolProfile`.
+  - **Kept** the fixed-relation `StudentGuardian` model (one row per Father/Mother/Guardian) rather than switching to flat `fatherName`/`motherName`/`guardianName` columns, which would have lost per-guardian contact info.
+  - No frontend or Promotion/Transfer endpoints existed yet, so this was a clean schema change with no migration-of-real-data concerns — the two smoke-test student records from v0.5.0 were deleted rather than migrated.
+
 ## [0.5.0] - 2026-07-08
 ### Added
 - **Student Admission Engine**: `POST /api/v1/students/admission` runs the full admission workflow atomically — generates a per-academic-year admission number (`{academicYear.label}-{4-digit sequence}`), then creates the `Student`, up to three `StudentGuardian` rows (Father/Mother/Guardian, fixed relations), and any `StudentDocument` rows in one transaction.

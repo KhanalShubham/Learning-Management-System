@@ -1,6 +1,7 @@
 import { prisma } from '@/prisma/client';
 import {
   Student,
+  Enrollment,
   StudentGuardian,
   StudentDocument,
   StudentStatus,
@@ -10,6 +11,7 @@ import {
 } from '@prisma/client';
 
 export type StudentWithRelations = Student & {
+  enrollments: Enrollment[];
   guardians: StudentGuardian[];
   documents: StudentDocument[];
 };
@@ -32,7 +34,10 @@ export interface AdmitStudentData {
   academicYearId: string;
   classId: string;
   sectionId: string;
-  fullName: string;
+  rollNumber?: number;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
   dateOfBirth: Date;
   gender: 'MALE' | 'FEMALE' | 'OTHER';
   photoUrl?: string;
@@ -41,6 +46,11 @@ export interface AdmitStudentData {
   district?: string;
   municipality?: string;
   ward?: string;
+  temporaryAddress?: string;
+  temporaryProvince?: string;
+  temporaryDistrict?: string;
+  temporaryMunicipality?: string;
+  temporaryWard?: string;
   bloodGroup?: string;
   allergies?: string;
   medicalConditions?: string;
@@ -66,7 +76,7 @@ export interface ListStudentsFilters {
 }
 
 export interface IStudentRepository {
-  admit(data: AdmitStudentData, academicYearLabel: string): Promise<StudentWithRelations>;
+  admit(data: AdmitStudentData, admissionNumberPrefix: string): Promise<StudentWithRelations>;
   findById(id: string): Promise<StudentWithRelations | null>;
   findAll(filters: ListStudentsFilters): Promise<{ data: Student[]; total: number }>;
   update(id: string, data: Prisma.StudentUpdateInput): Promise<Student>;
@@ -87,14 +97,22 @@ export interface IStudentRepository {
 }
 
 export class StudentRepository implements IStudentRepository {
-  // Increments the per-academic-year sequence and creates the Student (plus
-  // guardians/documents) in one transaction, so concurrent admissions can't
-  // collide on the same admission number.
+  // Increments the per-academic-year sequence and creates the Student, its
+  // first Enrollment, guardians, and documents in one transaction, so
+  // concurrent admissions can't collide on the same admission number.
   public async admit(
     data: AdmitStudentData,
-    academicYearLabel: string
+    admissionNumberPrefix: string
   ): Promise<StudentWithRelations> {
-    const { guardians, documents, academicYearId, classId, sectionId, ...profile } = data;
+    const {
+      guardians,
+      documents,
+      academicYearId,
+      classId,
+      sectionId,
+      rollNumber,
+      ...profile
+    } = data;
 
     return prisma.$transaction(async (tx) => {
       const sequence = await tx.admissionNumberSequence.upsert({
@@ -103,19 +121,26 @@ export class StudentRepository implements IStudentRepository {
         create: { academicYearId, lastNumber: 1 },
       });
 
-      const admissionNumber = `${academicYearLabel}-${String(sequence.lastNumber).padStart(4, '0')}`;
+      const admissionNumber = `${admissionNumberPrefix}-${String(sequence.lastNumber).padStart(4, '0')}`;
 
       return tx.student.create({
         data: {
           ...profile,
           admissionNumber,
-          academicYear: { connect: { id: academicYearId } },
-          class: { connect: { id: classId } },
-          section: { connect: { id: sectionId } },
           guardians: { create: guardians },
           documents: { create: documents },
+          enrollments: {
+            create: [
+              {
+                academicYear: { connect: { id: academicYearId } },
+                class: { connect: { id: classId } },
+                section: { connect: { id: sectionId } },
+                rollNumber,
+              },
+            ],
+          },
         },
-        include: { guardians: true, documents: true },
+        include: { enrollments: true, guardians: true, documents: true },
       });
     });
   }
@@ -123,22 +148,36 @@ export class StudentRepository implements IStudentRepository {
   public async findById(id: string): Promise<StudentWithRelations | null> {
     return prisma.student.findUnique({
       where: { id },
-      include: { guardians: true, documents: true },
+      include: {
+        enrollments: { orderBy: { enrolledAt: 'desc' } },
+        guardians: true,
+        documents: true,
+      },
     });
   }
 
   public async findAll(filters: ListStudentsFilters): Promise<{ data: Student[]; total: number }> {
     const { academicYearId, classId, sectionId, status, search, skip = 0, take = 20 } = filters;
 
+    const enrollmentFilter =
+      academicYearId || classId || sectionId
+        ? {
+            some: {
+              ...(academicYearId ? { academicYearId } : {}),
+              ...(classId ? { classId } : {}),
+              ...(sectionId ? { sectionId } : {}),
+            },
+          }
+        : undefined;
+
     const where: Prisma.StudentWhereInput = {
-      ...(academicYearId ? { academicYearId } : {}),
-      ...(classId ? { classId } : {}),
-      ...(sectionId ? { sectionId } : {}),
+      ...(enrollmentFilter ? { enrollments: enrollmentFilter } : {}),
       ...(status ? { status } : {}),
       ...(search
         ? {
             OR: [
-              { fullName: { contains: search, mode: 'insensitive' } },
+              { firstName: { contains: search, mode: 'insensitive' } },
+              { lastName: { contains: search, mode: 'insensitive' } },
               { admissionNumber: { contains: search, mode: 'insensitive' } },
             ],
           }

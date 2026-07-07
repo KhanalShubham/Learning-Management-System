@@ -24,10 +24,11 @@ Both exist because a photo/document needs to be uploaded *before* the Student re
 ### `POST /admission`
 ```json
 {
-  "academicYearId": "uuid", "classId": "uuid", "sectionId": "uuid",
-  "fullName": "Ram Sharma", "dateOfBirth": "2018-05-10", "gender": "MALE",
+  "academicYearId": "uuid", "classId": "uuid", "sectionId": "uuid", "rollNumber": 1,
+  "firstName": "Ram", "middleName": "", "lastName": "Sharma", "dateOfBirth": "2018-05-10", "gender": "MALE",
   "photoUrl": "https://...",
   "address": "...", "province": "...", "district": "...", "municipality": "...", "ward": "...",
+  "temporaryAddress": "...", "temporaryProvince": "...", "temporaryDistrict": "...", "temporaryMunicipality": "...", "temporaryWard": "...",
   "bloodGroup": "O+", "allergies": "...", "medicalConditions": "...",
   "emergencyContactName": "...", "emergencyContactPhone": "...",
   "previousSchoolName": "...", "previousSchoolBoard": "...", "lastClassCompleted": "...", "transferCertificateNumber": "...",
@@ -41,17 +42,17 @@ Both exist because a photo/document needs to be uploaded *before* the Student re
   ]
 }
 ```
-`academicYearId`/`classId`/`sectionId` are validated against the Academic Engine (year exists, class belongs to that year, section belongs to that class) before anything is written. Generates the admission number and creates the `Student` + `StudentGuardian[]` + `StudentDocument[]` atomically. `guardians` requires at least one entry; `documents` is optional. Returns `201` with the full student record (including relations).
+`academicYearId`/`classId`/`sectionId` are validated against the Academic Engine (year exists, class belongs to that year, section belongs to that class) before anything is written. Generates the admission number (`{schoolProfile.shortName}-{academicYear.startDate's year}-{seq}`, e.g. `DPS-2025-0001`, falling back to `SCH-` if no short code is configured) and creates the `Student`, its first `Enrollment` (carrying `classId`/`sectionId`/`rollNumber`), `StudentGuardian[]`, and `StudentDocument[]` atomically. `guardians` requires at least one entry; `documents` and `rollNumber` are optional. A duplicate `rollNumber` within the same section/year returns `409`. Returns `201` with the full student record (including relations).
 
 ## Student records
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/?academicYearId=&classId=&sectionId=&status=&search=&skip=&take=` | `search` matches `fullName` or `admissionNumber` (case-insensitive contains). Paginated (`skip`/`take`, default 0/20, max 100). |
-| GET | `/:id` | Includes `guardians` and `documents`. |
-| PUT | `/:id` | Profile fields only — `academicYearId`/`classId`/`sectionId`/`admissionNumber` are not editable here (moving a student between classes is future Promotion/Transfer engine work). |
+| GET | `/?academicYearId=&classId=&sectionId=&status=&search=&skip=&take=` | The academic-year/class/section filters match against `Enrollment`, not `Student` directly. `search` matches `firstName`, `lastName`, or `admissionNumber` (case-insensitive contains). Paginated (`skip`/`take`, default 0/20, max 100). |
+| GET | `/:id` | Includes `enrollments` (all years, most recent first), `guardians`, and `documents`. |
+| PUT | `/:id` | Profile fields only — class/section placement is never edited here; it lives on `Enrollment`, managed by the future Promotion/Transfer engines. |
 | POST | `/:id/status` | `{ status: ACTIVE\|INACTIVE\|TRANSFERRED\|GRADUATED\|WITHDRAWN }` |
-| DELETE | `/:id` | Cascades to guardians and documents (no reference-count guard, unlike Class/Section — a student's guardians/documents have no meaning independent of the student). |
+| DELETE | `/:id` | Cascades to `Enrollment`, guardians, and documents (no reference-count guard, unlike Class/Section — none of these have meaning independent of the student). |
 
 ## Guardians
 
@@ -69,5 +70,5 @@ Both exist because a photo/document needs to be uploaded *before* the Student re
 | DELETE | `/:id/documents/:documentId` | — |
 
 ## Deferred to future sprints
-- **Promotion** (year-end bulk move to the next class) and **Transfer** (student leaving for another school, distinct from the `TRANSFERRED` status which already exists) are listed in the Student Engine's scope but not built in this sprint — moving a student between classes/sections currently requires no dedicated endpoint.
+- **Promotion** (year-end bulk move to the next class, creating a new `Enrollment` row) and **Transfer** (student leaving for another school, distinct from the `TRANSFERRED` status which already exists) are listed in the Student Engine's scope but not built in this sprint — there is no endpoint yet that creates a second `Enrollment` for an existing student.
 - **Fee Category** is a plain string field; it becomes a proper FK once a Finance Engine exists.

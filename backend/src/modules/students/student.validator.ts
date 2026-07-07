@@ -53,8 +53,11 @@ export const admitStudentSchema = z.object({
   academicYearId: z.string().uuid('Invalid Academic Year ID'),
   classId: z.string().uuid('Invalid Class ID'),
   sectionId: z.string().uuid('Invalid Section ID'),
+  rollNumber: z.coerce.number().int().positive().optional(),
 
-  fullName: z.string().min(1, 'Full name is required'),
+  firstName: z.string().min(1, 'First name is required'),
+  middleName: z.string().optional(),
+  lastName: z.string().min(1, 'Last name is required'),
   dateOfBirth: z.coerce.date(),
   gender: z.enum(GENDER),
   photoUrl: z.string().url('Invalid photo URL').optional(),
@@ -64,6 +67,11 @@ export const admitStudentSchema = z.object({
   district: z.string().optional(),
   municipality: z.string().optional(),
   ward: z.string().optional(),
+  temporaryAddress: z.string().optional(),
+  temporaryProvince: z.string().optional(),
+  temporaryDistrict: z.string().optional(),
+  temporaryMunicipality: z.string().optional(),
+  temporaryWard: z.string().optional(),
 
   bloodGroup: z.string().optional(),
   allergies: z.string().optional(),
@@ -83,7 +91,14 @@ export const admitStudentSchema = z.object({
 });
 
 export const updateStudentSchema = admitStudentSchema
-  .omit({ academicYearId: true, classId: true, sectionId: true, guardians: true, documents: true })
+  .omit({
+    academicYearId: true,
+    classId: true,
+    sectionId: true,
+    rollNumber: true,
+    guardians: true,
+    documents: true,
+  })
   .partial();
 
 export const updateStudentStatusSchema = z.object({

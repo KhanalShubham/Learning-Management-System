@@ -241,7 +241,7 @@ model AcademicYear {
   status                  AcademicYearStatus       @default(ACTIVE)
   classes                 Class[]
   examTypes               ExamType[]
-  students                Student[]
+  enrollments             Enrollment[]
   admissionNumberSequence AdmissionNumberSequence?
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
@@ -266,7 +266,7 @@ model Class {
   status         RecordStatus   @default(ACTIVE)
   sections       Section[]
   classSubjects  ClassSubject[]
-  students       Student[]
+  enrollments    Enrollment[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
@@ -276,16 +276,16 @@ model Class {
 
 // Class subdivision entry (e.g. Section A, B, C)
 model Section {
-  id         String       @id @default(uuid())
-  classId    String
-  class      Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
-  name       String
-  capacity   Int?
-  roomNumber String?
-  status     RecordStatus @default(ACTIVE)
-  students   Student[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  id          String       @id @default(uuid())
+  classId     String
+  class       Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  name        String
+  capacity    Int?
+  roomNumber  String?
+  status      RecordStatus @default(ACTIVE)
+  enrollments Enrollment[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@unique([classId, name])
   @@map("sections")
@@ -381,29 +381,31 @@ enum StudentDocumentType {
 
 // Student Admission Engine — Student is the outcome of the admission
 // workflow (see student.service.ts admitStudent), not a bare CRUD entity.
-// academicYearId/classId/sectionId are foreign keys into the Academic
-// Engine's reference data — never redefined here.
+// Class/Section placement lives on Enrollment (below), not here, so a
+// student's placement history survives year-over-year promotion.
 model Student {
-  id              String       @id @default(uuid())
-  admissionNumber String       @unique
-  academicYearId  String
-  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
-  classId         String
-  class           Class        @relation(fields: [classId], references: [id])
-  sectionId       String
-  section         Section      @relation(fields: [sectionId], references: [id])
+  id              String @id @default(uuid())
+  admissionNumber String @unique
 
-  fullName    String
+  firstName  String
+  middleName String?
+  lastName   String
+
   dateOfBirth DateTime
   gender      Gender
   photoUrl    String?
 
   // Address
-  address      String?
-  province     String?
-  district     String?
-  municipality String?
-  ward         String?
+  address               String?
+  province              String?
+  district              String?
+  municipality          String?
+  ward                  String?
+  temporaryAddress      String?
+  temporaryProvince     String?
+  temporaryDistrict     String?
+  temporaryMunicipality String?
+  temporaryWard         String?
 
   // Medical information
   bloodGroup            String?
@@ -425,10 +427,36 @@ model Student {
   status        StudentStatus     @default(ACTIVE)
   guardians     StudentGuardian[]
   documents     StudentDocument[]
+  enrollments   Enrollment[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
   @@map("students")
+}
+
+// One row per academic year a student is placed into a Class/Section — the
+// history that direct classId/sectionId fields on Student would have erased
+// on promotion. rollNumber is per-enrollment (per year/section), not global.
+// Promotion/Transfer engines (future) create/close Enrollment rows; this
+// sprint only creates the first one, at admission time.
+model Enrollment {
+  id             String       @id @default(uuid())
+  studentId      String
+  student        Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYearId String
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  classId        String
+  class          Class        @relation(fields: [classId], references: [id])
+  sectionId      String
+  section        Section      @relation(fields: [sectionId], references: [id])
+  rollNumber     Int?
+  enrolledAt     DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@unique([studentId, academicYearId])
+  @@unique([academicYearId, sectionId, rollNumber])
+  @@map("enrollments")
 }
 
 // Fixed Father/Mother/Guardian relations — at most one row per relation per student.

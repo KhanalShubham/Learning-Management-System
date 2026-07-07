@@ -9,13 +9,20 @@ import {
   DocumentInput,
 } from './student.repository';
 import { IAcademicYearRepository } from '@/modules/system-config/academic-year.repository';
+import { ISchoolProfileRepository } from '@/modules/system-config/school-profile.repository';
 import { IClassRepository } from '@/modules/academic-structure/class.repository';
 import { ISectionRepository } from '@/modules/academic-structure/section.repository';
+
+// Fallback used only if the school hasn't set a short code in System
+// Configuration yet — admissions shouldn't be blocked on that being set,
+// but the admin should be nudged to configure it for a meaningful prefix.
+const DEFAULT_SCHOOL_SHORT_CODE = 'SCH';
 
 export class StudentService {
   constructor(
     private studentRepository: IStudentRepository,
     private academicYearRepository: IAcademicYearRepository,
+    private schoolProfileRepository: ISchoolProfileRepository,
     private classRepository: IClassRepository,
     private sectionRepository: ISectionRepository
   ) {}
@@ -27,7 +34,7 @@ export class StudentService {
     academicYearId: string,
     classId: string,
     sectionId: string
-  ): Promise<string> {
+  ): Promise<Date> {
     const academicYear = await this.academicYearRepository.findById(academicYearId);
     if (!academicYear) {
       throw new AppError('Academic year not found', 404);
@@ -43,16 +50,31 @@ export class StudentService {
       throw new AppError('Section not found for this class', 404);
     }
 
-    return academicYear.label;
+    return academicYear.startDate;
   }
 
   public async admitStudent(data: AdmitStudentData): Promise<StudentWithRelations> {
-    const academicYearLabel = await this.validateAcademicPlacement(
+    const startDate = await this.validateAcademicPlacement(
       data.academicYearId,
       data.classId,
       data.sectionId
     );
-    return this.studentRepository.admit(data, academicYearLabel);
+
+    const schoolProfile = await this.schoolProfileRepository.getOrCreate();
+    const shortCode = schoolProfile.shortName || DEFAULT_SCHOOL_SHORT_CODE;
+    const admissionNumberPrefix = `${shortCode}-${startDate.getFullYear()}`;
+
+    try {
+      return await this.studentRepository.admit(data, admissionNumberPrefix);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new AppError(
+          'A student with this roll number already exists in this section for this academic year',
+          409
+        );
+      }
+      throw error;
+    }
   }
 
   public async getStudentById(id: string): Promise<StudentWithRelations> {
