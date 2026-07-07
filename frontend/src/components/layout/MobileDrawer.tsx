@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/store';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NAVIGATION_CONFIG } from '@/constants/navigation';
 import { Drawer } from '@/components/ui/Drawer';
 import * as Icons from 'lucide-react';
@@ -15,8 +17,10 @@ const DrawerIcon = ({ name, className }: { name: string; className?: string }) =
 export const MobileDrawer = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { mobileNavOpen, setMobileNavOpen, simulatedRole } = useUIStore();
-  const menuItems = NAVIGATION_CONFIG[simulatedRole] || [];
+  const { mobileNavOpen, setMobileNavOpen } = useUIStore();
+  const { logout } = useAuth();
+  const effectiveRole = useEffectiveRole();
+  const menuItems = NAVIGATION_CONFIG[effectiveRole] || [];
 
   // Close drawer on path change
   useEffect(() => {
@@ -25,14 +29,7 @@ export const MobileDrawer = () => {
 
   const handleSignOut = async () => {
     setMobileNavOpen(false);
-    try {
-      const { api } = await import('@/services/api');
-      const { useAuthStore } = await import('@/store/auth-store');
-      await api.post('/auth/logout');
-      useAuthStore.getState().clearSession();
-    } catch {
-      // ignore logout failure
-    }
+    await logout();
     navigate('/login');
   };
 

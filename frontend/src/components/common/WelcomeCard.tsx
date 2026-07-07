@@ -1,9 +1,9 @@
-import { useUIStore } from '@/store';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
 import { Card } from '@/components/ui/Card';
 import { Sparkles, Calendar } from 'lucide-react';
 
 export const WelcomeCard = () => {
-  const simulatedRole = useUIStore((state) => state.simulatedRole);
+  const effectiveRole = useEffectiveRole();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -16,18 +16,14 @@ export const WelcomeCard = () => {
 
   const meta = {
     admin: {
-      name: 'Admin User',
-      focus: 'System health is optimal. You have 2 pending leave applications and 1 audit review log today.',
+      name: 'School Administrator',
+      focus: 'Attendance for today is pending for 2 sections. Exam marks import queue has 1 CSV waiting.',
     },
-    teacher: {
-      name: 'Hari Prasad',
-      focus: 'Your class attendance lists are compiled. Grade 10 English lectures start at 10:30 AM.',
+    super_admin: {
+      name: 'Super Administrator',
+      focus: 'System health is optimal. Review the latest audit log and staff account activity today.',
     },
-    student: {
-      name: 'Ram Bahadur',
-      focus: 'Your terminal report cards are published. Check out the Exams panel to view marks.',
-    },
-  }[simulatedRole];
+  }[effectiveRole];
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',

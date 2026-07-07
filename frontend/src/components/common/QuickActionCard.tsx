@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { useUIStore } from '@/store';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
 import { useToast } from '@/hooks/use-toast';
 import {
   UserPlus,
@@ -12,13 +12,11 @@ import {
   FileSpreadsheet,
   FileCheck,
   CalendarCheck,
-  Mail,
   Wallet,
-  CalendarDays,
 } from 'lucide-react';
 
 export const QuickActionCard = () => {
-  const simulatedRole = useUIStore((state) => state.simulatedRole);
+  const effectiveRole = useEffectiveRole();
   const { toast } = useToast();
 
   // Dialog / Modal triggers
@@ -105,53 +103,30 @@ export const QuickActionCard = () => {
         onClick: () => toast({ title: 'Downloading', description: 'Report card ledger CSV initiated...', variant: 'info' }),
       },
     ],
-    teacher: [
+    super_admin: [
       {
-        name: 'File Attendance',
-        description: 'Mark class assembly list',
+        name: 'Mark Attendance',
+        description: 'File today\'s class assembly list',
         icon: CalendarCheck,
         color: 'bg-emerald-500 hover:bg-emerald-600',
         onClick: () => toast({ title: 'Attendance Registry', description: 'Redirecting to attendance log...', variant: 'info' }),
       },
       {
-        name: 'Request Leave',
-        description: 'Submit leave applications',
-        icon: Mail,
-        color: 'bg-amber-500 hover:bg-amber-600',
-        onClick: () => setLeaveModalOpen(true),
-      },
-      {
-        name: 'Grades Sheets',
-        description: 'Input final test marks',
+        name: 'Import Marks',
+        description: 'Upload exam marks CSV',
         icon: FileCheck,
         color: 'bg-indigo-500 hover:bg-indigo-600',
-        onClick: () => toast({ title: 'Grade Book', description: 'Redirecting to Grade book...', variant: 'info' }),
+        onClick: () => toast({ title: 'Exam Import', description: 'Redirecting to marks import...', variant: 'info' }),
       },
-    ],
-    student: [
       {
-        name: 'Pay Invoices',
-        description: 'Clear semester fee amounts',
+        name: 'Backup Database',
+        description: 'Trigger a manual system backup',
         icon: Wallet,
-        color: 'bg-blue-500 hover:bg-blue-600',
-        onClick: () => toast({ title: 'Payment Desk', description: 'Connecting secure payment gateway...', variant: 'info' }),
-      },
-      {
-        name: 'Submit Absence',
-        description: 'Log leave excuses',
-        icon: CalendarDays,
-        color: 'bg-amber-500 hover:bg-amber-600',
-        onClick: () => setLeaveModalOpen(true),
-      },
-      {
-        name: 'Help Desk',
-        description: 'Contact campus principal',
-        icon: Mail,
         color: 'bg-purple-500 hover:bg-purple-600',
-        onClick: () => setSupportModalOpen(true),
+        onClick: () => toast({ title: 'Backup Started', description: 'Database backup running in the background...', variant: 'info' }),
       },
     ],
-  }[simulatedRole];
+  }[effectiveRole];
 
   return (
     <Card className="flex flex-col justify-between h-full">

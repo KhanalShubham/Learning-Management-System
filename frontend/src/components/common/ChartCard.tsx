@@ -1,9 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
-import { useUIStore } from '@/store';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
 import { motion } from 'framer-motion';
 
 export const ChartCard = () => {
-  const simulatedRole = useUIStore((state) => state.simulatedRole);
+  const effectiveRole = useEffectiveRole();
 
   const configs = {
     admin: {
@@ -14,23 +14,15 @@ export const ChartCard = () => {
       color: 'var(--color-primary)',
       fillColor: 'rgba(59, 130, 246, 0.08)',
     },
-    teacher: {
+    super_admin: {
       title: 'Average Attendance Performance',
-      description: 'Historical percentage rate across classes',
+      description: 'Historical percentage rate across all classes',
       points: [90, 92, 88, 94, 91, 95, 93, 96, 94, 97],
       labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'],
       color: 'var(--color-success)',
       fillColor: 'rgba(16, 185, 129, 0.08)',
     },
-    student: {
-      title: 'Academic Performance Trends',
-      description: 'GPA average scores across semester examinations',
-      points: [60, 65, 55, 70, 75, 82, 80, 88, 85, 92],
-      labels: ['Unit 1', 'Unit 2', 'Quarter 1', 'Mid-Term', 'Unit 3', 'Unit 4', 'Quarter 2', 'Pre-Board', 'Finals', 'Board'],
-      color: 'var(--color-info)',
-      fillColor: 'rgba(14, 165, 233, 0.08)',
-    },
-  }[simulatedRole];
+  }[effectiveRole];
 
   // Map configs to coordinate coordinates
   const height = 160;

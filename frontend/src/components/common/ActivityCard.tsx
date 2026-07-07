@@ -1,6 +1,6 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/Card';
 import { ArrowUpRight } from 'lucide-react';
-import { useUIStore } from '@/store';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
 import { cn } from '@/utils/cn';
 
 interface ActivityItem {
@@ -11,30 +11,24 @@ interface ActivityItem {
 }
 
 export const ActivityCard = () => {
-  const simulatedRole = useUIStore((state) => state.simulatedRole);
+  const effectiveRole = useEffectiveRole();
 
-  const logs: Record<'admin' | 'teacher' | 'student', ActivityItem[]> = {
+  const logs: Record<'admin' | 'super_admin', ActivityItem[]> = {
     admin: [
       { id: 1, message: 'New student admissions form submitted - Ram Chandra', time: '5 mins ago', type: 'enrollment' },
       { id: 2, message: 'Monthly fee invoices dispatched to all classes', time: '1 hour ago', type: 'billing' },
-      { id: 3, message: 'Server database backup completed successfully', time: '3 hours ago', type: 'system' },
+      { id: 3, message: 'Attendance report filed for Class 10 Section A', time: '3 hours ago', type: 'attendance' },
       { id: 4, message: 'Emergency notice board announcement updated', time: '6 hours ago', type: 'announcement' },
     ],
-    teacher: [
-      { id: 1, message: 'Attendance report filed for Class 10 Section A', time: '15 mins ago', type: 'attendance' },
-      { id: 2, message: 'Grade 11 English Term Marks uploaded', time: '2 hours ago', type: 'exam' },
-      { id: 3, message: 'Staff assembly duty assignments updated', time: '4 hours ago', type: 'system' },
-      { id: 4, message: 'Class syllabus outlines updated for Grade 9 Math', time: '7 hours ago', type: 'syllabus' },
-    ],
-    student: [
-      { id: 1, message: 'Term Examination schedule published', time: '30 mins ago', type: 'exam' },
-      { id: 2, message: 'Library book overdue alert - "Intro to Physics"', time: '2 hours ago', type: 'warning' },
-      { id: 3, message: 'Fee invoice payment confirmed for Admission Term', time: '1 day ago', type: 'billing' },
-      { id: 4, message: 'Weekly class schedule updated', time: '2 days ago', type: 'announcement' },
+    super_admin: [
+      { id: 1, message: 'New staff account created for School Administrator', time: '15 mins ago', type: 'system' },
+      { id: 2, message: 'Server database backup completed successfully', time: '2 hours ago', type: 'system' },
+      { id: 3, message: 'School configuration updated by Admin', time: '4 hours ago', type: 'system' },
+      { id: 4, message: 'Audit log reviewed — no anomalies found', time: '7 hours ago', type: 'system' },
     ],
   };
 
-  const currentLogs = logs[simulatedRole] || [];
+  const currentLogs = logs[effectiveRole] || [];
 
   return (
     <Card className="flex flex-col h-full justify-between">

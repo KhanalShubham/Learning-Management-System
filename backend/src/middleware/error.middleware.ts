@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { ZodError } from 'zod';
 import { logger } from '@/config/logger';
 import { errorResponse } from '@/utils/api-response';
 
@@ -20,6 +21,15 @@ export const errorHandler = (
   res: Response,
   _next: NextFunction
 ) => {
+  if (err instanceof ZodError) {
+    const fieldErrors = err.issues.map((issue) => ({
+      field: issue.path.join('.'),
+      message: issue.message,
+    }));
+    logger.warn(`${req.method} ${req.path} - Status: 400 - Validation failed`);
+    return errorResponse(res, 'Validation failed', fieldErrors, 400);
+  }
+
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 

@@ -8,7 +8,7 @@ export interface ToastItem {
   duration?: number;
 }
 
-export type UserRole = 'admin' | 'teacher' | 'student';
+export type SimulatedRole = 'super_admin' | 'admin';
 
 interface UIState {
   // Sidebar state
@@ -21,9 +21,10 @@ interface UIState {
   setMobileNavOpen: (open: boolean) => void;
   toggleMobileNav: () => void;
 
-  // Role simulation state (for developer presentation)
-  simulatedRole: UserRole;
-  setSimulatedRole: (role: UserRole) => void;
+  // Dev-only role preview override (never affects real permissions, DEV builds only).
+  // null means "use the real authenticated user's role".
+  devRoleOverride: SimulatedRole | null;
+  setDevRoleOverride: (role: SimulatedRole | null) => void;
 
   // Toast notifications state
   toasts: ToastItem[];
@@ -40,8 +41,8 @@ export const useUIStore = create<UIState>((set) => ({
   setMobileNavOpen: (open) => set({ mobileNavOpen: open }),
   toggleMobileNav: () => set((state) => ({ mobileNavOpen: !state.mobileNavOpen })),
 
-  simulatedRole: 'admin',
-  setSimulatedRole: (role) => set({ simulatedRole: role }),
+  devRoleOverride: null,
+  setDevRoleOverride: (role) => set({ devRoleOverride: role }),
 
   toasts: [],
   addToast: (toast) => {

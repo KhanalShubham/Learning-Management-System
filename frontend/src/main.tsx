@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AuthBootstrap } from '@/components/theme/AuthBootstrap';
 import { AuthProvider } from '@/features/auth/providers/AuthProvider';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { router } from './routes';
 import './index.css';
 
@@ -19,14 +20,16 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <AuthProvider>
-          <AuthBootstrap>
-            <RouterProvider router={router} />
-          </AuthBootstrap>
-        </AuthProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AuthProvider>
+            <AuthBootstrap>
+              <RouterProvider router={router} />
+            </AuthBootstrap>
+          </AuthProvider>
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   </StrictMode>
 );

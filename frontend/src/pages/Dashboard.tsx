@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useUIStore } from '@/store';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
 import { useToast } from '@/hooks/use-toast';
 import { WelcomeCard } from '@/components/common/WelcomeCard';
 import { StatsCard } from '@/components/common/StatsCard';
@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Sparkles, Eye, Info } from 'lucide-react';
 
 export default function Dashboard() {
-  const simulatedRole = useUIStore((state) => state.simulatedRole);
+  const effectiveRole = useEffectiveRole();
   const { toast } = useToast();
 
   // Showcase UI toggles
@@ -42,7 +42,7 @@ export default function Dashboard() {
       { title: 'Semester Grade Average', value: '3.62 GPA', change: '+0.15', changeType: 'positive' as const, icon: 'FileSpreadsheet', color: 'violet' as const },
       { title: 'Library Checked Books', value: '2 Overdue', change: 'Due in 3 days', changeType: 'negative' as const, icon: 'CalendarDays', color: 'amber' as const },
     ],
-  }[simulatedRole] || [];
+  }[effectiveRole] || [];
 
   const triggerLoaderShowcase = () => {
     setLoadingState(true);
@@ -62,7 +62,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat, i) => (
           <StatsCard
-            key={`${simulatedRole}-stat-${i}`}
+            key={`${effectiveRole}-stat-${i}`}
             title={stat.title}
             value={stat.value}
             change={stat.change}

@@ -16,8 +16,19 @@ import { Alert } from '@/components/ui/Alert';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
 const Login = lazy(() => import('@/pages/Login'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
+const ChangePassword = lazy(() => import('@/pages/ChangePassword'));
+const SchoolProfile = lazy(() => import('@/pages/SchoolProfile'));
+const AcademicYears = lazy(() => import('@/pages/AcademicYears'));
+const ClassesAndSections = lazy(() => import('@/pages/ClassesAndSections'));
+const Subjects = lazy(() => import('@/pages/Subjects'));
+const ClassSubjects = lazy(() => import('@/pages/ClassSubjects'));
+const Users = lazy(() => import('@/pages/Users'));
+const Roles = lazy(() => import('@/pages/Roles'));
 const PublicHome = lazy(() => import('@/pages/PublicHome'));
 const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
+const SessionExpired = lazy(() => import('@/pages/SessionExpired'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
 
 const PageLoader = () => (
@@ -62,6 +73,42 @@ export const router = createBrowserRouter([
       },
     ],
   },
+  {
+    path: '/forgot-password',
+    element: (
+      <PublicRoute>
+        <AuthLayout />
+      </PublicRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ForgotPassword />
+          </Suspense>
+        ),
+      },
+    ],
+  },
+  {
+    path: '/reset-password',
+    element: (
+      <PublicRoute>
+        <AuthLayout />
+      </PublicRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ResetPassword />
+          </Suspense>
+        ),
+      },
+    ],
+  },
 
   // Dashboard Framework Layout Routes
   {
@@ -78,6 +125,42 @@ export const router = createBrowserRouter([
           <Suspense fallback={<PageLoader />}>
             <Dashboard />
           </Suspense>
+        ),
+      },
+      {
+        path: 'school/profile',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <SchoolProfile />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'school/academic-years',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AcademicYears />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'users',
+        element: (
+          <ProtectedRoute requiredPermission="users.read">
+            <Suspense fallback={<PageLoader />}>
+              <Users />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'roles',
+        element: (
+          <ProtectedRoute requiredPermission="roles.write">
+            <Suspense fallback={<PageLoader />}>
+              <Roles />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
@@ -207,10 +290,7 @@ export const router = createBrowserRouter([
         path: 'academics/classes',
         element: (
           <Suspense fallback={<PageLoader />}>
-            <div className="p-6 bg-card border border-border rounded-xl">
-              <h2 className="text-xl font-bold">Classes & Sections</h2>
-              <p className="text-muted-foreground mt-1 text-xs">Establish school grades, semesters, and sections layout config.</p>
-            </div>
+            <ClassesAndSections />
           </Suspense>
         ),
       },
@@ -218,10 +298,15 @@ export const router = createBrowserRouter([
         path: 'academics/subjects',
         element: (
           <Suspense fallback={<PageLoader />}>
-            <div className="p-6 bg-card border border-border rounded-xl">
-              <h2 className="text-xl font-bold">Subjects Registry</h2>
-              <p className="text-muted-foreground mt-1 text-xs">Manage curricula, syllabus chapters, and assign course code mappings.</p>
-            </div>
+            <Subjects />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'academics/subject-allocation',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ClassSubjects />
           </Suspense>
         ),
       },
@@ -266,6 +351,14 @@ export const router = createBrowserRouter([
               <h2 className="text-xl font-bold">Website Content CMS</h2>
               <p className="text-muted-foreground mt-1 text-xs">Author blog entries, campus notices, announcements, and events sliders.</p>
             </div>
+          </Suspense>
+        ),
+      },
+      {
+        path: 'change-password',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ChangePassword />
           </Suspense>
         ),
       },
@@ -340,6 +433,16 @@ export const router = createBrowserRouter([
     element: (
       <Suspense fallback={<PageLoader />}>
         <Unauthorized />
+      </Suspense>
+    ),
+  },
+
+  // Session expired view
+  {
+    path: '/session-expired',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <SessionExpired />
       </Suspense>
     ),
   },

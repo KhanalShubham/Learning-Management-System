@@ -3,7 +3,7 @@
 This directory houses static configuration details and unchanging values used in the application.
 Examples:
 - `config.ts` - Client settings, API route prefixes
-- `roles.ts` - Roles names definitions (ADMIN, TEACHER, STUDENT)
+- `roles.ts` - Roles names definitions (SUPER_ADMIN, ADMIN)
 
 ## Guidelines
 - Do not mix configuration values with calculations.

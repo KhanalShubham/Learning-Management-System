@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUIStore, type UserRole } from '@/store';
+import { useUIStore, type SimulatedRole } from '@/store';
 import { useTheme } from '@/hooks/use-theme';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthStore } from '@/store/auth-store';
-import { api } from '@/services/api';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { Breadcrumb } from '@/components/ui/Breadcrumb';
 import { Avatar } from '@/components/ui/Avatar';
 import {
@@ -15,18 +15,20 @@ import {
   Laptop,
   Search,
   Check,
-  User,
   Settings,
   LogOut,
   Sparkles,
+  KeyRound,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const Header = () => {
   const navigate = useNavigate();
-  const { toggleSidebar, toggleMobileNav, simulatedRole, setSimulatedRole } = useUIStore();
+  const { toggleSidebar, toggleMobileNav, devRoleOverride, setDevRoleOverride } = useUIStore();
   const { theme, setTheme } = useTheme();
   const { toast } = useToast();
+  const { user, logout } = useAuth();
+  const effectiveRole = useEffectiveRole();
 
   // Dropdown States
   const [notifOpen, setNotifOpen] = useState(false);
@@ -57,11 +59,11 @@ export const Header = () => {
   };
 
   const handleRoleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const role = e.target.value as UserRole;
-    setSimulatedRole(role);
+    const role = e.target.value as SimulatedRole;
+    setDevRoleOverride(role);
     toast({
-      title: 'Role Shifted',
-      description: `Dashboard layout updated for ${role.toUpperCase()} access configuration`,
+      title: 'Dev Preview: Role Shifted',
+      description: `Navigation preview updated for ${role.toUpperCase()} — this does not change your real permissions.`,
       variant: 'info',
     });
   };
@@ -83,12 +85,18 @@ export const Header = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  // Active simulated user labels
+  // Real signed-in user's display details
   const userMeta = {
-    admin: { name: 'Admin User', roleName: 'Super Administrator', fallback: 'AU' },
-    teacher: { name: 'Hari Prasad', roleName: 'Senior Lecturer', fallback: 'HP' },
-    student: { name: 'Ram Bahadur', roleName: 'Grade 10 Student', fallback: 'RB' },
-  }[simulatedRole];
+    name: user?.fullName ?? 'Unknown User',
+    roleName: user?.role ?? '',
+    fallback:
+      user?.fullName
+        ?.split(' ')
+        .map((part) => part[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'U',
+  };
 
   return (
     <header className="h-16 border-b border-border bg-card/75 backdrop-blur-md flex items-center justify-between px-4 sm:px-6 shrink-0 z-30 select-none">
@@ -118,19 +126,20 @@ export const Header = () => {
 
       {/* Right side: search, controls, user menu */}
       <div className="flex items-center gap-3.5">
-        {/* Role Simulator Switcher (Developer utility) */}
-        <div className="flex items-center gap-1.5 bg-primary/8 dark:bg-primary/5 border border-primary/20 rounded-lg px-2.5 py-1.5 hover:bg-primary/10 transition-all">
-          <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
-          <select
-            value={simulatedRole}
-            onChange={handleRoleChange}
-            className="text-[11px] font-bold text-primary bg-transparent focus:outline-none appearance-none cursor-pointer pr-1"
-          >
-            <option value="admin">ADMIN PROFILE</option>
-            <option value="teacher">TEACHER PROFILE</option>
-            <option value="student">STUDENT PROFILE</option>
-          </select>
-        </div>
+        {/* Role Simulator Switcher (Developer-only nav preview, never affects real permissions) */}
+        {import.meta.env.DEV && (
+          <div className="flex items-center gap-1.5 bg-primary/8 dark:bg-primary/5 border border-primary/20 rounded-lg px-2.5 py-1.5 hover:bg-primary/10 transition-all">
+            <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+            <select
+              value={devRoleOverride ?? effectiveRole}
+              onChange={handleRoleChange}
+              className="text-[11px] font-bold text-primary bg-transparent focus:outline-none appearance-none cursor-pointer pr-1"
+            >
+              <option value="super_admin">SUPER ADMIN PREVIEW</option>
+              <option value="admin">ADMIN PREVIEW</option>
+            </select>
+          </div>
+        )}
 
         {/* Search Placeholder */}
         <div className="relative hidden lg:flex items-center w-48">
@@ -276,12 +285,12 @@ export const Header = () => {
                 <button
                   onClick={() => {
                     setUserOpen(false);
-                    toast({ title: 'Profile Link', description: 'User Profile link selected' });
+                    navigate('/change-password');
                   }}
                   className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
                 >
-                  <User className="h-4 w-4" />
-                  My Profile
+                  <KeyRound className="h-4 w-4" />
+                  Change Password
                 </button>
                 <button
                   onClick={() => {
@@ -297,12 +306,7 @@ export const Header = () => {
                 <button
                   onClick={async () => {
                     setUserOpen(false);
-                    try {
-                      await api.post('/auth/logout');
-                    } catch {
-                      // ignore logout endpoint failure
-                    }
-                    useAuthStore.getState().clearSession();
+                    await logout();
                     toast({
                       title: 'Signed Out',
                       description: 'Logged out of campus session registry successfully',

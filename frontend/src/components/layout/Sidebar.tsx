@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/store';
+import { useEffectiveRole } from '@/hooks/use-effective-role';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { NAVIGATION_CONFIG } from '@/constants/navigation';
 import * as Icons from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,8 +17,10 @@ const SidebarIcon = ({ name, className }: { name: string; className?: string }) 
 export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { sidebarOpen, simulatedRole } = useUIStore();
-  const menuItems = NAVIGATION_CONFIG[simulatedRole] || [];
+  const { logout } = useAuth();
+  const { sidebarOpen } = useUIStore();
+  const effectiveRole = useEffectiveRole();
+  const menuItems = NAVIGATION_CONFIG[effectiveRole] || [];
 
   // Track which submenus are manually toggled (overriding default expansion)
   const [manuallyToggled, setManuallyToggled] = useState<Record<string, boolean>>({});
@@ -160,14 +164,7 @@ export const Sidebar = () => {
       <div className="p-3.5 border-t border-border/80 shrink-0">
         <button
           onClick={async () => {
-            try {
-              const { api } = await import('@/services/api');
-              const { useAuthStore } = await import('@/store/auth-store');
-              await api.post('/auth/logout');
-              useAuthStore.getState().clearSession();
-            } catch {
-              // ignore logout endpoint failure
-            }
+            await logout();
             navigate('/login');
           }}
           className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-destructive hover:bg-destructive/8 hover:text-destructive transition-colors cursor-pointer"

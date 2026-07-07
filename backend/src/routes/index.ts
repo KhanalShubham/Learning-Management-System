@@ -14,5 +14,21 @@ router.get('/health', (req, res) => {
 // Auth modular routes
 router.use('/auth', authRouter);
 
+// Users modular routes
+import userRouter from '@/modules/users/user.routes';
+router.use('/users', userRouter);
+
+// Roles modular routes
+import roleRouter from '@/modules/roles/role.routes';
+router.use('/roles', roleRouter);
+
+// System configuration engine modular routes
+import systemConfigRouter from '@/modules/system-config/system-config.routes';
+router.use('/system', systemConfigRouter);
+
+// Academic structure engine modular routes
+import academicStructureRouter from '@/modules/academic-structure/academic-structure.routes';
+router.use('/academic-structure', academicStructureRouter);
+
 export default router;
 
