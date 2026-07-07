@@ -233,16 +233,18 @@ enum AcademicYearStatus {
 
 // School academic year catalog with one designated current year
 model AcademicYear {
-  id        String             @id @default(uuid())
-  label     String             @unique
-  startDate DateTime
-  endDate   DateTime
-  isCurrent Boolean            @default(false)
-  status    AcademicYearStatus @default(ACTIVE)
-  classes   Class[]
-  examTypes ExamType[]
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  id                      String                   @id @default(uuid())
+  label                   String                   @unique
+  startDate               DateTime
+  endDate                 DateTime
+  isCurrent               Boolean                  @default(false)
+  status                  AcademicYearStatus       @default(ACTIVE)
+  classes                 Class[]
+  examTypes               ExamType[]
+  students                Student[]
+  admissionNumberSequence AdmissionNumberSequence?
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   @@map("academic_years")
 }
@@ -264,6 +266,7 @@ model Class {
   status         RecordStatus   @default(ACTIVE)
   sections       Section[]
   classSubjects  ClassSubject[]
+  students       Student[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
@@ -280,6 +283,7 @@ model Section {
   capacity   Int?
   roomNumber String?
   status     RecordStatus @default(ACTIVE)
+  students   Student[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
@@ -342,6 +346,127 @@ model ExamType {
 
   @@unique([academicYearId, name])
   @@map("exam_types")
+}
+
+// Student lifecycle status — distinct from reference-data's ACTIVE/ARCHIVED
+// because a student's departure reason (graduated vs. withdrawn vs.
+// transferred to another school) matters for records and reporting.
+enum StudentStatus {
+  ACTIVE
+  INACTIVE
+  TRANSFERRED
+  GRADUATED
+  WITHDRAWN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum GuardianRelation {
+  FATHER
+  MOTHER
+  GUARDIAN
+}
+
+enum StudentDocumentType {
+  BIRTH_CERTIFICATE
+  TRANSFER_CERTIFICATE
+  CHARACTER_CERTIFICATE
+  PHOTO
+  OTHER
+}
+
+// Student Admission Engine — Student is the outcome of the admission
+// workflow (see student.service.ts admitStudent), not a bare CRUD entity.
+// academicYearId/classId/sectionId are foreign keys into the Academic
+// Engine's reference data — never redefined here.
+model Student {
+  id              String       @id @default(uuid())
+  admissionNumber String       @unique
+  academicYearId  String
+  academicYear    AcademicYear @relation(fields: [academicYearId], references: [id])
+  classId         String
+  class           Class        @relation(fields: [classId], references: [id])
+  sectionId       String
+  section         Section      @relation(fields: [sectionId], references: [id])
+
+  fullName    String
+  dateOfBirth DateTime
+  gender      Gender
+  photoUrl    String?
+
+  // Address
+  address      String?
+  province     String?
+  district     String?
+  municipality String?
+  ward         String?
+
+  // Medical information
+  bloodGroup            String?
+  allergies             String?
+  medicalConditions     String?
+  emergencyContactName  String?
+  emergencyContactPhone String?
+
+  // Previous school
+  previousSchoolName        String?
+  previousSchoolBoard       String?
+  lastClassCompleted        String?
+  transferCertificateNumber String?
+
+  // Forward reference — no Finance Engine yet; migrates to a FK once one exists.
+  feeCategory String?
+
+  admissionDate DateTime          @default(now())
+  status        StudentStatus     @default(ACTIVE)
+  guardians     StudentGuardian[]
+  documents     StudentDocument[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@map("students")
+}
+
+// Fixed Father/Mother/Guardian relations — at most one row per relation per student.
+model StudentGuardian {
+  id         String           @id @default(uuid())
+  studentId  String
+  student    Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  relation   GuardianRelation
+  fullName   String
+  phone      String
+  email      String?
+  occupation String?
+  address    String?
+
+  @@unique([studentId, relation])
+  @@map("student_guardians")
+}
+
+model StudentDocument {
+  id           String              @id @default(uuid())
+  studentId    String
+  student      Student             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  documentType StudentDocumentType
+  fileUrl      String
+  uploadedAt   DateTime            @default(now())
+
+  @@map("student_documents")
+}
+
+// Internal counter for admission-number generation — one row per academic
+// year, incremented inside the same transaction as the Student create so
+// concurrent admissions can't collide. Not exposed via CRUD.
+model AdmissionNumberSequence {
+  academicYearId String       @id
+  academicYear   AcademicYear @relation(fields: [academicYearId], references: [id])
+  lastNumber     Int          @default(0)
+
+  @@map("admission_number_sequences")
 }
 
 // Security compliance audit logging record mapping

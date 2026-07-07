@@ -30,5 +30,9 @@ router.use('/system', systemConfigRouter);
 import academicStructureRouter from '@/modules/academic-structure/academic-structure.routes';
 router.use('/academic-structure', academicStructureRouter);
 
+// Student admission engine modular routes
+import studentRouter from '@/modules/students/student.routes';
+router.use('/students', studentRouter);
+
 export default router;
 

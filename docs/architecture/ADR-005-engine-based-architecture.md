@@ -13,8 +13,9 @@ We organize the backend (and mirrored frontend feature folders) into **Engines**
 2. Exposes reference data that other Engines consume **by foreign key only** — a downstream Engine never redefines or duplicates another Engine's entities.
 3. Follows a consistent internal layering: `Route → Controller → Service → Repository → Prisma`. Controllers never import `prisma`/`@/prisma/client` directly, including for read-only aggregate endpoints — this keeps every Engine swappable and testable at the service boundary.
 4. Uses archive-only retirement (`status: ACTIVE | ARCHIVED`) for reference data; hard-delete is only permitted when a record has zero downstream references.
-5. Gets its own dedicated permission codes (`<engine>.read`, `<engine>.create`, `<engine>.update`, `<engine>.archive`) rather than sharing a generic `system.*` pair, even before multiple roles need differentiated access — this keeps the authorization model consistent as roles diversify later.
+5. Gets its own dedicated permission codes (`<engine>.read`, `<engine>.<create-verb>`, `<engine>.update`, `<engine>.archive`) rather than sharing a generic `system.*` pair, even before multiple roles need differentiated access. The create-verb reflects what the engine actually does — reference-data engines use `create` (e.g. `academic.create`), workflow engines name it after the workflow (e.g. `students.admit`, not `students.create`) so the permission reads the same way the UI action does.
 6. Is designed to generalize beyond the first school's specific data — seed data stays generic; school-specific customization happens through onboarding/configuration flows, not hardcoded seeds.
+7. May depend on another Engine's repositories directly for cross-engine reference validation (e.g. Student Admission validates `academicYearId`/`classId`/`sectionId` against the Academic Engine's `AcademicYearRepository`/`ClassRepository`/`SectionRepository` before admitting a student) — this is composition through the repository interface, not duplication, and keeps the FK-only reference-data rule enforceable at write time instead of only at the database constraint level.
 
 ## Engines (as of 2026-07-08)
 | Engine | Status | Owns |
@@ -22,7 +23,7 @@ We organize the backend (and mirrored frontend feature folders) into **Engines**
 | Authentication Engine | ✅ Done | Users' credentials, sessions, password reset |
 | Configuration Engine | ✅ Done | School Profile, Branding, Leadership, Academic Years, Academic Terms, Grading Scale, Settings |
 | Academic Engine | ✅ Done | Class, Section, Subject, ClassSubject, ExamType, aggregate structure tree |
-| Student Admission Engine | Planned | Admission workflow (number generation, academic year/class/section assignment, guardian info, document upload) — not a bare Student CRUD |
+| Student Admission Engine | ✅ Done | Admission workflow (atomic admission-number generation + Student + Guardians + Documents), Student profile/status lifecycle, Guardians, Documents |
 | Attendance Engine | Planned | Attendance marking and reporting |
 | Examination Engine | Planned | Scheduled exam instances (ExamType × Date × Class × Section), results, marksheets |
 | Document Engine | Planned | Certificate/document generation |
@@ -35,3 +36,4 @@ Users and Roles are treated as part of the Authentication/Authorization surface 
 - **Dependency-ordered build sequence**: every downstream Engine needs Academic Engine data to exist first (a student needs a class/section; attendance needs a section; an exam result needs a ClassSubject). Building in this order avoids modeling placeholders that get reworked later.
 - **Consistent layering makes engines swappable**: a strict repository/service/controller boundary means an Engine's persistence details never leak into route handlers, so read-heavy aggregate endpoints don't become the one exception that reintroduces direct Prisma access into controllers.
 - **Reference-data ownership prevents drift**: without a single owner per concept, two Engines (e.g. Student and Attendance) could each grow their own notion of "class," which is exactly the kind of duplication that turns into an expensive refactor once both are in production.
+- **Workflow-first naming avoids a bare-CRUD mental model**: `POST /students/admission` (not `POST /students`) and the `students.admit` permission match how a school actually thinks about the action — a school admits a student, it doesn't "create" one. This is deliberate at the API and permission layer, not just the frontend copy.

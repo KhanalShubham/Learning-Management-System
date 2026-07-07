@@ -16,11 +16,14 @@ const permissionsList = [
   { code: 'roles.read', description: 'View roles and their permission sets' },
   { code: 'roles.write', description: 'Create, update, and manage roles and permissions' },
 
-  // Student Management
+  // Student Admission Engine
   { code: 'students.read', description: 'View student registries and profiles' },
-  { code: 'students.create', description: 'Admit new students into the ERP' },
-  { code: 'students.update', description: 'Modify active student details' },
-  { code: 'students.delete', description: 'Remove student records from the register' },
+  { code: 'students.admit', description: 'Run the admission workflow to enroll new students' },
+  { code: 'students.update', description: 'Modify active student details, guardians, and documents' },
+  {
+    code: 'students.archive',
+    description: 'Change student lifecycle status (transferred/graduated/withdrawn) or remove a record',
+  },
 
   // Teacher Management
   { code: 'teachers.read', description: 'View faculty details' },
@@ -84,9 +87,9 @@ const adminPermissions = [
   // a Super Admin exclusive.
   'roles.read',
   'students.read',
-  'students.create',
+  'students.admit',
   'students.update',
-  'students.delete',
+  'students.archive',
   'teachers.read',
   'teachers.create',
   'teachers.update',

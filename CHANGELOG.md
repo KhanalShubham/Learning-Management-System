@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.5.0] - 2026-07-08
+### Added
+- **Student Admission Engine**: `POST /api/v1/students/admission` runs the full admission workflow atomically — generates a per-academic-year admission number (`{academicYear.label}-{4-digit sequence}`), then creates the `Student`, up to three `StudentGuardian` rows (Father/Mother/Guardian, fixed relations), and any `StudentDocument` rows in one transaction.
+  - `academicYearId`/`classId`/`sectionId` are validated against the Academic Engine's own repositories before anything is written — a first example of one Engine composing another Engine's repository layer for cross-engine reference checks, rather than duplicating the check or trusting a bare FK constraint to surface a friendly error.
+  - `Student.status` (`ACTIVE | INACTIVE | TRANSFERRED | GRADUATED | WITHDRAWN`) is a real lifecycle distinct from reference-data's `ACTIVE | ARCHIVED`, since a student's departure reason matters for records.
+  - Upload pipeline (`upload.middleware.ts`, `cloudinary.ts`) extended to accept PDFs alongside images (`resource_type: 'auto'`) for scanned certificates, shared infra rather than a Student-specific fork.
+  - Dedicated `students.read` / `students.admit` / `students.update` / `students.archive` permissions — `students.admit` (not `students.create`) so the permission name matches the workflow, matching the same convention as the Academic Engine's permissions.
+  - `feeCategory` is a plain string field for now — a deliberate forward reference pending a future Finance Engine's `FeeCategory` reference table.
+  - Promotion (year-end class move) and Transfer (student leaving for another school) are explicitly out of scope for this sprint.
+- **Documentation**: ADR-005 updated with the Student Admission Engine's status and the cross-engine repository-composition pattern, an ER diagram, and a full API reference (`docs/api/students.md`).
+
 ## [0.3.0] - 2026-07-08
 ### Added
 - **Authentication Engine hardening**: Removed fallback JWT secret defaults in favor of required 32+ character secrets, added a password-reset flow (token storage + email delivery via a new mailer config), and distinguished a mid-session token-refresh failure (session revoked elsewhere) from a first-load unauthenticated state by redirecting to a dedicated session-expired page.
