@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-07-08
+### Added
+- **Authentication Engine hardening**: Removed fallback JWT secret defaults in favor of required 32+ character secrets, added a password-reset flow (token storage + email delivery via a new mailer config), and distinguished a mid-session token-refresh failure (session revoked elsewhere) from a first-load unauthenticated state by redirecting to a dedicated session-expired page.
+- **System Configuration Engine**: School Profile, Branding (Cloudinary-backed logo/signature uploads), Leadership directory, Academic Years, Academic Terms, Grading Scale, and general Settings, each with a full repository/service/controller/validator stack.
+- **Academic Engine**: `AcademicYear` → `Class` → `Section` → `Subject` → `ClassSubject` → `ExamType` as reference data, all under `/api/v1/academic-structure`.
+  - `ExamType` models reusable exam *templates* (First Terminal, Mid-Term, Final, Practical, etc. — `name`, `code`, `description`, `displayOrder`, `weightage`, `isPublished`). Scheduled exam *instances* are deferred to a future Examination Engine.
+  - `GET /academic-structure/structure` aggregate endpoint returns the full tree plus `summary` counts (classes/sections/subjects/classSubjects/examTypes) in one call, composed through a dedicated `AcademicStructureRepository`/`AcademicStructureService` — no controller in this engine queries Prisma directly.
+  - Dedicated `academic.read` / `academic.create` / `academic.update` / `academic.archive` permissions (previously piggybacked on `system.read`/`system.write`); archive and hard-delete share the `archive` tier since delete is only reachable on zero-reference records.
+  - Archive-only retirement (`RecordStatus: ACTIVE|ARCHIVED`) across all five entities; hard-delete blocked while references exist.
+  - Seed data stays generic (Nursery→Grade 10, standard six-subject catalog) — no school-specific data is seeded; per-school customization is deferred to a future School Setup Wizard.
+- **User Accounts module**: CRUD for login accounts, deliberately scoped apart from the future Student/Teacher engines.
+- **Roles module**: CRUD for roles/permissions, plus a `useEffectiveRole` frontend hook mirroring the backend's wildcard (`*`) Super Admin bypass.
+- **Frontend wiring**: nested "Academic Structure" and "School Configuration" nav sections, routes, and dashboard widget updates for all of the above.
+
 ## [0.2.0] - 2026-06-28
 ### Added
 - **Central Theme & Tokens**: Configured HSL palette standards for primary, secondary, warning, error, success, info, and neutral color spaces in `index.css`.

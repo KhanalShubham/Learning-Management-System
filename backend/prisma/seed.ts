@@ -63,6 +63,15 @@ const permissionsList = [
     code: 'system.write',
     description: 'Modify school profile, branding, leadership, settings, academic years, terms, and grading',
   },
+
+  // Academic Engine (classes, sections, subjects, class subjects, exam types)
+  { code: 'academic.read', description: 'View classes, sections, subjects, class subjects, and exam types' },
+  { code: 'academic.create', description: 'Create classes, sections, subjects, class subjects, and exam types' },
+  { code: 'academic.update', description: 'Modify classes, sections, subjects, class subjects, and exam types' },
+  {
+    code: 'academic.archive',
+    description: 'Archive or delete classes, sections, subjects, class subjects, and exam types',
+  },
 ];
 
 // Permissions granted to the day-to-day School Admin role.
@@ -97,6 +106,10 @@ const adminPermissions = [
   'settings.read',
   'system.read',
   'system.write',
+  'academic.read',
+  'academic.create',
+  'academic.update',
+  'academic.archive',
 ];
 
 async function main() {
