@@ -10,10 +10,20 @@ import {
   Prisma,
 } from '@prisma/client';
 
+export type EnrollmentWithPlacement = Enrollment & {
+  academicYear: { id: string; label: string };
+  class: { id: string; name: string };
+  section: { id: string; name: string };
+};
+
 export type StudentWithRelations = Student & {
-  enrollments: Enrollment[];
+  enrollments: EnrollmentWithPlacement[];
   guardians: StudentGuardian[];
   documents: StudentDocument[];
+};
+
+export type StudentListItem = Student & {
+  enrollments: EnrollmentWithPlacement[];
 };
 
 export interface GuardianInput {
@@ -78,7 +88,7 @@ export interface ListStudentsFilters {
 export interface IStudentRepository {
   admit(data: AdmitStudentData, admissionNumberPrefix: string): Promise<StudentWithRelations>;
   findById(id: string): Promise<StudentWithRelations | null>;
-  findAll(filters: ListStudentsFilters): Promise<{ data: Student[]; total: number }>;
+  findAll(filters: ListStudentsFilters): Promise<{ data: StudentListItem[]; total: number }>;
   update(id: string, data: Prisma.StudentUpdateInput): Promise<Student>;
   updateStatus(id: string, status: StudentStatus): Promise<Student>;
   delete(id: string): Promise<Student>;
@@ -140,7 +150,17 @@ export class StudentRepository implements IStudentRepository {
             ],
           },
         },
-        include: { enrollments: true, guardians: true, documents: true },
+        include: {
+          enrollments: {
+            include: {
+              academicYear: { select: { id: true, label: true } },
+              class: { select: { id: true, name: true } },
+              section: { select: { id: true, name: true } },
+            },
+          },
+          guardians: true,
+          documents: true,
+        },
       });
     });
   }
@@ -149,14 +169,21 @@ export class StudentRepository implements IStudentRepository {
     return prisma.student.findUnique({
       where: { id },
       include: {
-        enrollments: { orderBy: { enrolledAt: 'desc' } },
+        enrollments: {
+          orderBy: { enrolledAt: 'desc' },
+          include: {
+            academicYear: { select: { id: true, label: true } },
+            class: { select: { id: true, name: true } },
+            section: { select: { id: true, name: true } },
+          },
+        },
         guardians: true,
         documents: true,
       },
     });
   }
 
-  public async findAll(filters: ListStudentsFilters): Promise<{ data: Student[]; total: number }> {
+  public async findAll(filters: ListStudentsFilters): Promise<{ data: StudentListItem[]; total: number }> {
     const { academicYearId, classId, sectionId, status, search, skip = 0, take = 20 } = filters;
 
     const enrollmentFilter =
@@ -185,7 +212,23 @@ export class StudentRepository implements IStudentRepository {
     };
 
     const [data, total] = await Promise.all([
-      prisma.student.findMany({ where, skip, take, orderBy: { admissionDate: 'desc' } }),
+      prisma.student.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { admissionDate: 'desc' },
+        include: {
+          enrollments: {
+            orderBy: { enrolledAt: 'desc' },
+            take: 1,
+            include: {
+              academicYear: { select: { id: true, label: true } },
+              class: { select: { id: true, name: true } },
+              section: { select: { id: true, name: true } },
+            },
+          },
+        },
+      }),
       prisma.student.count({ where }),
     ]);
 

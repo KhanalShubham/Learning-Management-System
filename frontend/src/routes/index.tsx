@@ -11,7 +11,6 @@ import { Badge } from '@/components/ui/Badge';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { Alert } from '@/components/ui/Alert';
 
 const Dashboard = lazy(() => import('@/pages/Dashboard'));
@@ -26,6 +25,9 @@ const Subjects = lazy(() => import('@/pages/Subjects'));
 const ClassSubjects = lazy(() => import('@/pages/ClassSubjects'));
 const Users = lazy(() => import('@/pages/Users'));
 const Roles = lazy(() => import('@/pages/Roles'));
+const Students = lazy(() => import('@/features/student/pages/Students'));
+const StudentAdmission = lazy(() => import('@/features/student/pages/StudentAdmission'));
+const StudentDetail = lazy(() => import('@/features/student/pages/StudentDetail'));
 const PublicHome = lazy(() => import('@/pages/PublicHome'));
 const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
 const SessionExpired = lazy(() => import('@/pages/SessionExpired'));
@@ -166,74 +168,31 @@ export const router = createBrowserRouter([
       {
         path: 'students',
         element: (
-          <Suspense fallback={<PageLoader />}>
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-foreground">Students Registry</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Manage and view all students currently enrolled in Deukhuri Digital Campus.</p>
-                </div>
-                <Button size="sm">Admit Student</Button>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Roll #</TableHead>
-                    <TableHead>Student Name</TableHead>
-                    <TableHead>Grade Section</TableHead>
-                    <TableHead>Enrollment Date</TableHead>
-                    <TableHead>Fees Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[
-                    { roll: '101', name: 'Sita Kumari', grade: 'Grade 10 - Sec A', date: '2024-03-12', status: 'Paid' },
-                    { roll: '102', name: 'Ram Bahadur', grade: 'Grade 10 - Sec A', date: '2024-03-14', status: 'Overdue' },
-                    { roll: '103', name: 'Chandra Prasad', grade: 'Grade 11 - Sec B', date: '2024-03-15', status: 'Paid' },
-                    { roll: '104', name: 'Gita Devkota', grade: 'Grade 9 - Sec A', date: '2024-03-18', status: 'Pending' },
-                  ].map((s) => (
-                    <TableRow key={s.roll}>
-                      <TableCell>{s.roll}</TableCell>
-                      <TableCell className="font-semibold text-foreground">{s.name}</TableCell>
-                      <TableCell>{s.grade}</TableCell>
-                      <TableCell>{s.date}</TableCell>
-                      <TableCell>
-                        <Badge variant={s.status === 'Paid' ? 'success' : s.status === 'Overdue' ? 'destructive' : 'warning'}>
-                          {s.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Suspense>
+          <ProtectedRoute requiredPermission="students.read">
+            <Suspense fallback={<PageLoader />}>
+              <Students />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
         path: 'students/admission',
         element: (
-          <Suspense fallback={<PageLoader />}>
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-foreground">Admissions Panel</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Admit new applicants and allocate academic roll sections.</p>
-              </div>
-              <div className="bg-card border border-border p-6 rounded-xl space-y-4 max-w-xl">
-                <Input label="Student Full Name" placeholder="e.g. Sita Devi" />
-                <Select
-                  label="Select Class Grade"
-                  options={[
-                    { value: '9', label: 'Grade 9' },
-                    { value: '10', label: 'Grade 10' },
-                    { value: '11', label: 'Grade 11' },
-                    { value: '12', label: 'Grade 12' },
-                  ]}
-                />
-                <Button className="w-full">Submit Admission Request</Button>
-              </div>
-            </div>
-          </Suspense>
+          <ProtectedRoute requiredPermission="students.admit">
+            <Suspense fallback={<PageLoader />}>
+              <StudentAdmission />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'students/:id',
+        element: (
+          <ProtectedRoute requiredPermission="students.read">
+            <Suspense fallback={<PageLoader />}>
+              <StudentDetail />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
