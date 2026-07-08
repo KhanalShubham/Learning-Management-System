@@ -72,6 +72,10 @@ export const createClassSubjectSchema = z
     path: ['passMarks'],
   }));
 
+export const assignTeacherSchema = z.object({
+  teacherId: z.string().uuid('Invalid Teacher ID').nullable(),
+});
+
 export const updateClassSubjectSchema = z.object({
   fullMarks: z.coerce.number().int().positive().optional(),
   passMarks: z.coerce.number().int().positive().optional(),

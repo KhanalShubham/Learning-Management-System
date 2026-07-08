@@ -34,5 +34,13 @@ router.use('/academic-structure', academicStructureRouter);
 import studentRouter from '@/modules/students/student.routes';
 router.use('/students', studentRouter);
 
+// Faculty management engine modular routes
+import facultyRouter from '@/modules/faculty/faculty.routes';
+router.use('/faculty', facultyRouter);
+
+// Public marketing site modular routes (unauthenticated)
+import publicSiteRouter from '@/modules/public-site/public-site.routes';
+router.use('/public', publicSiteRouter);
+
 export default router;
 

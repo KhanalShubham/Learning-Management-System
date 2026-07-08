@@ -1,0 +1,103 @@
+/* Deukhuri Public School — public site design system.
+   Scoped under .public-site so the ERP dashboard's shadcn tokens in
+   index.css (blue --primary, etc.) stay untouched. Re-theming the
+   dashboard to this palette is a separate, later decision. */
+
+.public-site {
+  /* Brand */
+  --brand-red: #d90429;
+  --brand-red-dark: #b10323;
+  --brand-red-light: #fdebec;
+
+  --brand-charcoal: #1f1f1f;
+  --brand-charcoal-700: #343434;
+  --brand-charcoal-500: #5a5a5a;
+
+  --brand-green: #2fa121;
+  --brand-green-dark: #227a18;
+  --brand-green-light: #eaf7e8;
+
+  --brand-gold: #f2b93b;
+  --brand-gold-dark: #d89a18;
+  --brand-gold-light: #fff7e4;
+
+  /* Neutrals */
+  --brand-white: #ffffff;
+  --brand-surface: #fafafa;
+  --brand-bg: #f7f8fa;
+  --brand-border: #e6e8ec;
+  --brand-text: #222222;
+  --brand-text-soft: #5b6472;
+
+  /* Radius */
+  --radius-card: 24px;
+  --radius-control: 12px;
+  --radius-pill: 999px;
+
+  /* Shadow — soft elevation only, never harsh drop shadows */
+  --shadow-sm: 0 1px 2px rgba(31, 31, 31, 0.04);
+  --shadow-md: 0 12px 28px -8px rgba(31, 31, 31, 0.12);
+  --shadow-lg: 0 24px 48px -12px rgba(31, 31, 31, 0.18);
+
+  /* Motion — subtle only: fade / slide / scale, never excessive */
+  --duration-micro: 150ms;
+  --duration-standard: 300ms;
+  --duration-slow: 500ms;
+  --ease-standard: cubic-bezier(0.16, 1, 0.3, 1);
+
+  background: var(--brand-bg);
+  color: var(--brand-text);
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+.public-site .font-display {
+  font-family: 'Outfit', sans-serif;
+}
+
+/* Spacing convention (documentation only — enforce via these Tailwind steps,
+   which already land on an 8px system): p-2/gap-2=8px, p-4=16px, p-6=24px,
+   p-8=32px, p-12=48px, p-16=64px, p-24=96px, p-32=128px. Don't reach for
+   arbitrary spacing values outside this scale on the public site. */
+
+.public-site .glass-nav {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.public-site dialog.welcome-dialog {
+  margin: auto;
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: 560px;
+  width: calc(100% - 48px);
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  transition:
+    opacity var(--duration-slow) var(--ease-standard),
+    transform var(--duration-slow) var(--ease-standard),
+    display var(--duration-slow) allow-discrete,
+    overlay var(--duration-slow) allow-discrete;
+}
+
+.public-site dialog.welcome-dialog::backdrop {
+  background: rgba(31, 31, 31, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@starting-style {
+  .public-site dialog.welcome-dialog[open] {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .public-site * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

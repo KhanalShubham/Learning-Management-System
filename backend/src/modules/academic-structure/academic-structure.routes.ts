@@ -66,6 +66,10 @@ router.post('/class-subjects', canCreate, classSubjectController.createClassSubj
 router.get('/class-subjects', canRead, classSubjectController.getAllClassSubjects);
 router.get('/class-subjects/:id', canRead, classSubjectController.getClassSubjectById);
 router.put('/class-subjects/:id', canUpdate, classSubjectController.updateClassSubject);
+// Additive — assigns/unassigns the Faculty Engine's Teacher onto a
+// ClassSubject; stays under academic.update since it's still an Academic
+// Engine mutation, not a Faculty Engine one (see faculty-engine-design-spec.md §2).
+router.post('/class-subjects/:id/assign-teacher', canUpdate, classSubjectController.assignTeacher);
 router.delete('/class-subjects/:id', canArchive, classSubjectController.deleteClassSubject);
 
 // Exam Types

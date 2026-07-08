@@ -25,11 +25,27 @@ const permissionsList = [
     description: 'Change student lifecycle status (transferred/graduated/withdrawn) or remove a record',
   },
 
-  // Teacher Management
-  { code: 'teachers.read', description: 'View faculty details' },
-  { code: 'teachers.create', description: 'Register new faculty instructors' },
-  { code: 'teachers.update', description: 'Modify faculty records' },
-  { code: 'teachers.delete', description: 'Remove faculty accounts' },
+  // Faculty Management Engine
+  {
+    code: 'teachers.read',
+    description: 'View the faculty directory, profiles, departments, and designations',
+  },
+  {
+    code: 'teachers.create',
+    description: 'Register new teachers; create departments and designations',
+  },
+  {
+    code: 'teachers.update',
+    description: 'Edit teacher profiles, qualifications, emergency contacts, and non-terminal status changes',
+  },
+  {
+    code: 'teachers.archive',
+    description:
+      'Archive departments/designations, or set a terminal teacher status (resigned/terminated/retired)',
+  },
+  { code: 'teachers.salary', description: "View or edit a teacher's basic salary reference field" },
+  { code: 'teachers.leave', description: "View or adjust a teacher's leave balance" },
+  { code: 'teachers.documents', description: 'Upload, view, or remove teacher HR documents' },
 
   // Attendance Module
   { code: 'attendance.mark', description: 'Mark student class attendance records' },
@@ -93,7 +109,10 @@ const adminPermissions = [
   'teachers.read',
   'teachers.create',
   'teachers.update',
-  'teachers.delete',
+  'teachers.archive',
+  'teachers.salary',
+  'teachers.leave',
+  'teachers.documents',
   'attendance.mark',
   'attendance.view',
   'exams.publish',

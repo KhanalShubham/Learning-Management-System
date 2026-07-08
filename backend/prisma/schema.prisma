@@ -28,6 +28,10 @@ enum AuditAction {
   STUDENT_STATUS_CHANGED
   STUDENT_DELETED
   STUDENT_PROMOTED
+  TEACHER_REGISTERED
+  TEACHER_UPDATED
+  TEACHER_STATUS_CHANGED
+  TEACHER_ARCHIVED
 }
 
 // User account identity entity mapping
@@ -324,6 +328,12 @@ model ClassSubject {
   theoryMarks        Int?
   practicalMarks     Int?
   practicalPassMarks Int?
+  // Nullable, additive FK onto the Faculty Management Engine — a deliberate,
+  // minimal exception to "don't redesign shipped engines" (see
+  // docs/architecture/faculty-engine-design-spec.md §2). Not every
+  // ClassSubject has an assigned teacher yet, so this stays optional.
+  teacherId          String?
+  teacher            Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -515,4 +525,192 @@ model AuditLog {
   createdAt DateTime    @default(now())
 
   @@map("audit_logs")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Faculty Management Engine — see docs/architecture/faculty-engine-design-spec.md
+// ─────────────────────────────────────────────────────────────────────────
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  VISITING
+}
+
+// Lifecycle status — distinct from RecordStatus for the same reason
+// StudentStatus is distinct from it: *why* someone left matters for records.
+// Unlike StudentStatus, every terminal value here is reversible back to
+// ACTIVE (rehire case) — this engine has no Enrollment-style history table
+// that reopening a record would corrupt.
+enum TeacherStatus {
+  ACTIVE
+  ON_LEAVE
+  SUSPENDED
+  RESIGNED
+  TERMINATED
+  RETIRED
+}
+
+enum TeacherDocumentType {
+  CITIZENSHIP
+  ACADEMIC_CERTIFICATE
+  EXPERIENCE_LETTER
+  APPOINTMENT_LETTER
+  PAN_CARD
+  PHOTO
+  OTHER
+}
+
+// Reference data — mirrors Subject's shape (name/code/status), owned here
+// rather than by the Academic Engine, since departments are an HR concept.
+model Department {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  code        String?      @unique
+  description String?
+  status      RecordStatus @default(ACTIVE)
+  teachers    Teacher[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("departments")
+}
+
+// Reference data — small ordered list (Principal, Vice Principal, HOD,
+// Senior Teacher, Teacher, ...). displayOrder drives hierarchy sort in the
+// UI, the same role GradingScale.order and Class.displayOrder play elsewhere.
+model Designation {
+  id           String       @id @default(uuid())
+  name         String       @unique
+  displayOrder Int
+  description  String?
+  status       RecordStatus @default(ACTIVE)
+  teachers     Teacher[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("designations")
+}
+
+// Faculty Management Engine — Teacher is reference data other engines
+// (Attendance, Examination, Finance) hold teacherId FKs into, the same way
+// Class/Section are owned by the Academic Engine. Not a bare CRUD entity:
+// registration runs through a workflow that generates an employeeId, the
+// same shape as Student admission.
+model Teacher {
+  id         String @id @default(uuid())
+  employeeId String @unique
+
+  firstName  String
+  middleName String?
+  lastName   String
+
+  dateOfBirth DateTime
+  gender      Gender
+  photoUrl    String?
+  bloodGroup  String?
+
+  phone String  @unique
+  email String? @unique
+
+  address      String?
+  province     String?
+  district     String?
+  municipality String?
+  ward         String?
+
+  departmentId   String
+  department     Department     @relation(fields: [departmentId], references: [id])
+  designationId  String
+  designation    Designation    @relation(fields: [designationId], references: [id])
+  employmentType EmploymentType
+  joiningDate    DateTime
+  leavingDate    DateTime?
+  status         TeacherStatus  @default(ACTIVE)
+
+  // Forward reference — no Finance/Payroll Engine yet; same pattern as
+  // Student.feeCategory. Gated behind teachers.salary, not
+  // teachers.read/update, since compensation is more sensitive than a
+  // profile edit — see docs/architecture/faculty-engine-design-spec.md §5/§7.
+  basicSalary Decimal? @db.Decimal(10, 2)
+
+  qualifications    TeacherQualification[]
+  emergencyContacts TeacherEmergencyContact[]
+  documents         TeacherDocument[]
+  leaveBalance      TeacherLeaveBalance?
+  classSubjects     ClassSubject[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("teachers")
+}
+
+model TeacherQualification {
+  id            String   @id @default(uuid())
+  teacherId     String
+  teacher       Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  degree        String
+  fieldOfStudy  String?
+  institution   String
+  yearCompleted Int
+  createdAt     DateTime @default(now())
+
+  @@map("teacher_qualifications")
+}
+
+// A teacher can list more than one contact (spouse + parent, etc.), unlike
+// Student's fixed Father/Mother/Guardian relations — isPrimary (service-layer
+// enforced: exactly one per teacher) marks which one gets called first.
+model TeacherEmergencyContact {
+  id        String   @id @default(uuid())
+  teacherId String
+  teacher   Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  name      String
+  relation  String
+  phone     String
+  isPrimary Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("teacher_emergency_contacts")
+}
+
+model TeacherDocument {
+  id           String              @id @default(uuid())
+  teacherId    String
+  teacher      Teacher             @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  documentType TeacherDocumentType
+  fileUrl      String
+  uploadedAt   DateTime            @default(now())
+
+  @@map("teacher_documents")
+}
+
+// Balance ledger only — no request/approval workflow here (that belongs to
+// the future Attendance Engine's "Leave" scope). Attendance decrements the
+// *Used fields when it approves a leave; this engine just exposes and lets
+// HR adjust entitlements.
+model TeacherLeaveBalance {
+  teacherId         String   @id
+  teacher           Teacher  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  annualEntitlement Int      @default(18)
+  sickEntitlement   Int      @default(12)
+  casualEntitlement Int      @default(6)
+  annualUsed        Int      @default(0)
+  sickUsed          Int      @default(0)
+  casualUsed        Int      @default(0)
+  updatedAt         DateTime @updatedAt
+
+  @@map("teacher_leave_balances")
+}
+
+// Global counter (not per-year like AdmissionNumberSequence) — staff persist
+// across academic years, so employeeId doesn't reset annually. Single fixed
+// row, same getOrCreate() singleton pattern as SchoolProfile/SchoolSettings.
+model EmployeeNumberSequence {
+  id         String @id @default("singleton")
+  lastNumber Int    @default(0)
+
+  @@map("employee_number_sequences")
 }

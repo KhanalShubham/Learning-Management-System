@@ -29,7 +29,14 @@ const StudentDashboard = lazy(() => import('@/features/student/pages/StudentDash
 const Students = lazy(() => import('@/features/student/pages/Students'));
 const StudentAdmission = lazy(() => import('@/features/student/pages/StudentAdmission'));
 const StudentDetail = lazy(() => import('@/features/student/pages/StudentDetail'));
-const PublicHome = lazy(() => import('@/pages/PublicHome'));
+const PublicHome = lazy(() => import('@/features/public-site/pages/PublicHome'));
+const NoticesList = lazy(() => import('@/features/public-site/pages/NoticesList'));
+const NoticeDetail = lazy(() => import('@/features/public-site/pages/NoticeDetail'));
+const AcademicsCatalog = lazy(() => import('@/features/public-site/pages/AcademicsCatalog'));
+const ProgramDetail = lazy(() => import('@/features/public-site/pages/ProgramDetail'));
+const FacultyDirectory = lazy(() => import('@/features/public-site/pages/FacultyDirectory'));
+const FacultyProfile = lazy(() => import('@/features/public-site/pages/FacultyProfile'));
+const Fees = lazy(() => import('@/features/public-site/pages/Fees'));
 const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
 const SessionExpired = lazy(() => import('@/pages/SessionExpired'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -51,6 +58,62 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<PageLoader />}>
             <PublicHome />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'notices',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <NoticesList />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'notices/:slug',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <NoticeDetail />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'academics',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <AcademicsCatalog />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'academics/:slug',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <ProgramDetail />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'faculty',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <FacultyDirectory />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'faculty/:slug',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <FacultyProfile />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'fees',
+        element: (
+          <Suspense fallback={<PageLoader />}>
+            <Fees />
           </Suspense>
         ),
       },

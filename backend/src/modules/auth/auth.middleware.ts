@@ -61,7 +61,7 @@ export const requireRole = (allowedRoles: string[]) => {
 
 /**
  * Permission-Based Access Control Middleware
- * 
+ *
  * Checks the active user permissions matrix against the required action permission.
  */
 export const requirePermission = (permission: string) => {
@@ -70,10 +70,41 @@ export const requirePermission = (permission: string) => {
       return errorResponse(res, 'Authentication required', null, 401);
     }
 
-    const { permissions } = req.user;
-    const hasPermission = permissions.includes(permission) || permissions.includes('*');
+    if (!hasPermission(req, permission)) {
+      return errorResponse(res, 'Permission denied: Required access permission is missing.', null, 403);
+    }
 
-    if (!hasPermission) {
+    return next();
+  };
+};
+
+/**
+ * Inline capability check for controllers that need to branch behavior by
+ * permission rather than reject the whole request — e.g. stripping a
+ * sensitive field (Faculty Engine's basicSalary) from a response instead of
+ * a hard 403, or picking which permission a status transition requires.
+ */
+export const hasPermission = (req: Request, permission: string): boolean => {
+  if (!req.user) return false;
+  const { permissions } = req.user;
+  return permissions.includes(permission) || permissions.includes('*');
+};
+
+/**
+ * Route-level gate for endpoints whose exact required permission depends on
+ * the request body (e.g. Faculty Engine's teacher status endpoint: a
+ * non-terminal transition needs teachers.update, a terminal one needs
+ * teachers.archive). Passes if the caller holds ANY of the listed
+ * permissions; the service layer still enforces the precise rule using
+ * hasPermission() for each specific check.
+ */
+export const requireAnyPermission = (permissions: string[]) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+      return errorResponse(res, 'Authentication required', null, 401);
+    }
+
+    if (!permissions.some((permission) => hasPermission(req, permission))) {
       return errorResponse(res, 'Permission denied: Required access permission is missing.', null, 403);
     }
 

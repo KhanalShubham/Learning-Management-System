@@ -5,9 +5,53 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### Conventions used from this entry onward
+- **Release Statistics** — a rough scale snapshot (endpoints, models, pages, components, permissions) for entries substantial enough to warrant one. Counts are for what that entry actually added, not cumulative totals — entries before this convention don't have one.
+- **Breaking** — called out under a release when an API/schema shape changes in a way that isn't backward-compatible.
+- **Migration** — commands a collaborator needs to run after pulling a release that touches the database or dependencies.
+
 ---
 
-## [Unreleased] - v0.6.0 Student Admission Engine (frontend)
+## [Unreleased] - v0.7.0 Faculty Management Engine
+### Added
+- **Faculty Management Engine** (`backend/src/modules/faculty/`) — Engine 6 in the build order, closing Milestone 6. Full design spec: [faculty-engine-design-spec.md](docs/architecture/faculty-engine-design-spec.md); ER diagram: [faculty-engine-er-diagram.md](docs/architecture/faculty-engine-er-diagram.md); API reference: [docs/api/faculty.md](docs/api/faculty.md).
+  - **Department** and **Designation** reference data, same archive-only-retirement shape as the Academic Engine's `Subject`/`Class` (`RecordStatus`, hard-delete blocked while any `Teacher` references it).
+  - **Teacher registration workflow** (`POST /faculty/teachers`, not bare CRUD) — generates a global `employeeId` (`{schoolProfile.shortName}-EMP-{seq}`, e.g. `DPS-EMP-0001`) via a new `EmployeeNumberSequence` singleton counter inside the same transaction as the Teacher/qualifications/emergency-contacts/documents/leave-balance create, the same collision-safe shape as Student admission numbers. Unlike admission numbers, this sequence is **global, not per-academic-year** — staff persist across years.
+  - **`TeacherStatus` lifecycle** (`ACTIVE | ON_LEAVE | SUSPENDED | RESIGNED | TERMINATED | RETIRED`) — deliberately **reversible** on every terminal value (rehire case), unlike `StudentStatus`'s one-way terminal states, since this engine has no `Enrollment`-style history a reopened record would corrupt. Any transition into or out of a terminal status requires `teachers.archive`; transitions among the three active-ish statuses only need `teachers.update`.
+  - **Emergency contacts as a child table** (`TeacherEmergencyContact`, multiple rows, one `isPrimary`) rather than Student's fixed inline fields — a teacher can list more than one contact. Cardinality (exactly one primary, at least one contact) is enforced at the service layer.
+  - **`basicSalary`** — a forward-reference field (no Finance/Payroll Engine yet, same pattern as `Student.feeCategory`), gated behind a dedicated `teachers.salary` permission rather than `teachers.read`/`teachers.update`: stripped silently from writes and **omitted entirely** (not null-masked) from reads when the caller lacks it.
+  - **Leave balance ledger only** (`TeacherLeaveBalance` — entitlement/used counters, `GET`/`PATCH .../leave-balance`) — deliberately does **not** include a request/approval workflow; that's scoped to the future Attendance Engine, which will decrement the `*Used` fields when it approves a leave.
+  - **Cross-engine touch on the Academic Engine**: additive, nullable `teacherId` on `ClassSubject` plus `POST /academic-structure/class-subjects/:id/assign-teacher` (validates the teacher exists and is `ACTIVE`). The one deliberate exception to "don't redesign shipped engines" — `ClassSubjectService` now composes `ITeacherRepository`, the same downstream-composes-upstream pattern as Student Admission validating Class/Section.
+  - **Permissions**: `teachers.salary`, `teachers.leave`, `teachers.documents` added; `teachers.delete` renamed to `teachers.archive` to match the `academic.archive`/`students.archive` convention (see Breaking, below).
+  - New `requireAnyPermission()` and `hasPermission()` helpers on the shared auth middleware — `hasPermission` lets a controller branch behavior (salary-field stripping) instead of hard-rejecting; `requireAnyPermission` gates the status endpoint where the exact required permission depends on the request body.
+### Fixed
+- `frontend/src/features/auth/types/index.ts`'s `Permission` union still had the old `teachers.delete` and was missing `teachers.salary`/`teachers.leave`/`teachers.documents` — synced to match the backend seed.
+
+### Breaking
+- **`teachers.delete` no longer exists** — renamed to `teachers.archive`. Since `prisma/seed.ts` fully flushes and re-seeds `Permission`/`Role`/`RolePermission` on every run, this is a no-op for any environment that re-seeds; it only matters if you were hand-editing `RolePermission` rows against the old code outside the seed script.
+
+### Release Statistics
+| Area | Count |
+| :--- | :--- |
+| New Prisma models | 8 (`Department`, `Designation`, `Teacher`, `TeacherQualification`, `TeacherEmergencyContact`, `TeacherDocument`, `TeacherLeaveBalance`, `EmployeeNumberSequence`) |
+| New Prisma enums | 3 (`EmploymentType`, `TeacherStatus`, `TeacherDocumentType`) |
+| New `AuditAction` values | 4 |
+| Additive fields on existing models | 1 (`ClassSubject.teacherId`) |
+| New backend module files | 13 |
+| New API endpoints | 31 (30 under `/faculty`, 1 under `/academic-structure`) |
+| New/changed permissions | 4 (`teachers.salary`, `teachers.leave`, `teachers.documents` added; `teachers.delete` → `teachers.archive`) |
+| New docs | 3 (`faculty-engine-design-spec.md`, `faculty-engine-er-diagram.md`, `docs/api/faculty.md`) |
+
+### Migration
+```bash
+cd backend
+npx prisma migrate dev   # applies the faculty_management_engine migration
+npx prisma db seed       # re-seeds permissions with the archive rename + 3 new codes
+```
+
+---
+
+## [Unreleased] - v0.6.0 Student Admission Engine (frontend) + Public Website
 ### Added
 - **Student Admission Engine frontend** under `frontend/src/features/student/`: Student Dashboard (landing page — stat tiles for total/today/this-month/archived, recent admissions, quick actions), Students registry (search, filter by year/class/section/status, pagination), Admission form, and a Student Detail page (Profile edit, Guardians CRUD, Documents CRUD, Enrollment History).
 - **`GET /students/summary`**: returns `{ total, active, todayAdmissions, newThisMonth, archived }` for the Dashboard's stat tiles. `archived` counts every non-`ACTIVE` status — there is no dedicated `ARCHIVED` status value.
@@ -15,8 +59,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Students registry search now also matches a guardian's `fullName`/`phone`, not just the student's own name/admission number. Added an "Export CSV" action to the registry (paginated fetch of every row matching current filters, client-side CSV generation — `frontend/src/utils/csv.ts`).
 - **`POST /students/:id/promote`**: creates a new `Enrollment` for a student into a different academic year/class/section without touching prior enrollments, so year-over-year placement history survives. Same cross-engine placement validation as `POST /admission`; `409` on a duplicate academic-year enrollment or a roll-number collision.
 - **Audit logging**: `AuditAction` enum extended with `STUDENT_ADMITTED`/`STUDENT_UPDATED`/`STUDENT_STATUS_CHANGED`/`STUDENT_PROMOTED`/`STUDENT_DELETED`. New shared `backend/src/utils/audit-log.ts` (used by the Student Engine, callable by any future engine) writes to the same `AuditLog` table auth events already use — `POST /admission`, `PUT /:id`, `POST /:id/status`, `POST /:id/promote`, and `DELETE /:id` each append a row.
+- **Public Website homepage + content pages** under `frontend/src/features/public-site/`, consuming the existing read-only `GET /public/site-info` endpoint:
+  - Homepage sections: Hero, StatsStrip, About, PrincipalMessage, Academics overview, Faculty overview, CampusLife gallery, Testimonials, FAQ, Notices preview, Admissions CTA.
+  - New routed content pages: Notices list/detail (`/public/notices`, `/public/notices/:slug`), Academics catalog/detail (`/public/academics`, `/public/academics/:slug`), Faculty directory/profile (`/public/faculty`, `/public/faculty/:slug`), Fee structure (`/public/fees`).
+  - Shared `PageHero` breadcrumb component for all inner public pages; `Nav`/`Footer` updated to route real pages via React Router `Link` while homepage sections stay as `#anchor` links.
+  - All content (notices, grade curricula, teacher bios, fee tables) is static frontend data under `features/public-site/data/` for now — not database-backed yet (tracked as Public Website Roadmap Phases 3–5 in the README).
 ### Fixed
 - `frontend/src/features/auth/types/index.ts` had stale `students.create`/`students.delete` permission codes; corrected to the actual `students.admit`/`students.archive` codes the backend uses.
+
+### Release Statistics
+| Area | Count |
+| :--- | :--- |
+| New API endpoints | 2 (`GET /students/summary`, `POST /students/:id/promote`) |
+| New `AuditAction` enum values | 5 |
+| New shared backend utilities | 1 (`audit-log.ts`) |
+| New Student Engine frontend pages | 4 (Dashboard, Students, Admission, Detail) |
+| New Public Website routes | 7 |
+| New Public Website components | 12 |
+| New Public Website data files | 7 |
+
+### Migration
+`AuditAction` is an existing enum extended with 5 new values — run a migration to sync the database:
+```bash
+cd backend
+npx prisma migrate dev
+```
+No new dependencies were added; `npm install` is not required unless your `node_modules` is already stale.
 
 ## [0.5.1] - 2026-07-08
 ### Changed

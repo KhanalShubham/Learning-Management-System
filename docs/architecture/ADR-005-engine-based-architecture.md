@@ -24,10 +24,11 @@ We organize the backend (and mirrored frontend feature folders) into **Engines**
 | Configuration Engine | ✅ Done | School Profile, Branding, Leadership, Academic Years, Academic Terms, Grading Scale, Settings |
 | Academic Engine | ✅ Done | Class, Section, Subject, ClassSubject, ExamType, aggregate structure tree |
 | Student Admission Engine | ✅ Done | Admission workflow (atomic admission-number generation + Student + Guardians + Documents), Student profile/status lifecycle, Guardians, Documents |
-| Attendance Engine | Planned | Attendance marking and reporting |
+| Faculty Management Engine | ✅ Done | Department, Designation, Teacher registration workflow (atomic employee-number generation), qualifications, emergency contacts, documents, leave balance ledger. Holds the one exception to strict reference-data ownership: an additive, nullable `teacherId` FK on the Academic Engine's `ClassSubject` — see [design spec](./faculty-engine-design-spec.md) |
+| Attendance Engine | Planned | Attendance marking and reporting, leave request/approval workflow (Faculty Engine only tracks the resulting balance) |
 | Examination Engine | Planned | Scheduled exam instances (ExamType × Date × Class × Section), results, marksheets |
 | Document Engine | Planned | Certificate/document generation |
-| Finance Engine | Planned | Fees, salary, payments |
+| Finance Engine | Planned | Fees, salary/payroll processing (Faculty Engine only holds a bare `basicSalary` reference field), payments |
 | Website CMS Engine | Planned | Public site content |
 
 Users and Roles are treated as part of the Authentication/Authorization surface rather than standalone Engines — they configure *who* can act, not a business domain in their own right.
