@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Plus, Search } from 'lucide-react';
+import { Download, GraduationCap, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
@@ -9,12 +9,15 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
+import { useToast } from '@/hooks/use-toast';
+import { toCsv, downloadCsv } from '@/utils/csv';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useAcademicYears } from '@/features/school/hooks/useAcademicYears';
 import { useClasses } from '@/features/academic-structure/hooks/useClasses';
 import { useSections } from '@/features/academic-structure/hooks/useSections';
 import { useStudents } from '@/features/student/hooks/useStudents';
-import type { StudentStatus } from '@/features/student/types';
+import { studentService } from '@/features/student/services/student.service';
+import type { ListStudentsFilters, StudentListItem, StudentStatus } from '@/features/student/types';
 
 const PAGE_SIZE = 20;
 
@@ -41,10 +44,14 @@ const statusVariant = (status: StudentStatus) => {
   }
 };
 
+const EXPORT_PAGE_SIZE = 100;
+
 export default function Students() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { user } = useAuth();
   const canAdmit = !!user?.permissions.includes('students.admit') || !!user?.permissions.includes('*');
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: years } = useAcademicYears();
   const [academicYearId, setAcademicYearId] = useState('');
@@ -66,18 +73,53 @@ export default function Students() {
   const { data: classes } = useClasses(academicYearId);
   const { data: sections } = useSections(classId);
 
-  const { data, isLoading, isFetching } = useStudents({
+  const activeFilters: ListStudentsFilters = {
     academicYearId: academicYearId || undefined,
     classId: classId || undefined,
     sectionId: sectionId || undefined,
     status: status || undefined,
     search: search || undefined,
+  };
+
+  const { data, isLoading, isFetching } = useStudents({
+    ...activeFilters,
     skip: (page - 1) * PAGE_SIZE,
     take: PAGE_SIZE,
   });
 
   const students = data?.data ?? [];
   const totalPages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
+
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const rows: StudentListItem[] = [];
+      let skip = 0;
+      while (true) {
+        const result = await studentService.listStudents({ ...activeFilters, skip, take: EXPORT_PAGE_SIZE });
+        rows.push(...result.data);
+        if (rows.length >= result.total || result.data.length === 0) break;
+        skip += EXPORT_PAGE_SIZE;
+      }
+
+      const csv = toCsv(rows, [
+        { label: 'Admission Number', value: (s) => s.admissionNumber },
+        { label: 'First Name', value: (s) => s.firstName },
+        { label: 'Middle Name', value: (s) => s.middleName ?? '' },
+        { label: 'Last Name', value: (s) => s.lastName },
+        { label: 'Class', value: (s) => s.enrollments[0]?.class.name ?? '' },
+        { label: 'Section', value: (s) => s.enrollments[0]?.section.name ?? '' },
+        { label: 'Roll Number', value: (s) => s.enrollments[0]?.rollNumber ?? '' },
+        { label: 'Admission Date', value: (s) => new Date(s.admissionDate).toLocaleDateString() },
+        { label: 'Status', value: (s) => s.status },
+      ]);
+      downloadCsv(csv, `students-${new Date().toISOString().slice(0, 10)}.csv`);
+    } catch {
+      toast({ title: 'Export Failed', description: 'Could not export students to CSV.', variant: 'destructive' });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -88,17 +130,28 @@ export default function Students() {
             Manage and view all students currently enrolled.
           </p>
         </div>
-        {canAdmit && (
-          <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate('/students/admission')}>
-            Admit Student
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            leftIcon={<Download className="h-4 w-4" />}
+            isLoading={isExporting}
+            onClick={handleExportCsv}
+          >
+            Export CSV
           </Button>
-        )}
+          {canAdmit && (
+            <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate('/students/admission')}>
+              Admit Student
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Input
           label="Search"
-          placeholder="Name or admission number"
+          placeholder="Name, admission #, guardian, or phone"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           leftIcon={<Search className="h-4 w-4" />}

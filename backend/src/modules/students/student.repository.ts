@@ -215,6 +215,8 @@ export class StudentRepository implements IStudentRepository {
               { firstName: { contains: search, mode: 'insensitive' } },
               { lastName: { contains: search, mode: 'insensitive' } },
               { admissionNumber: { contains: search, mode: 'insensitive' } },
+              { guardians: { some: { fullName: { contains: search, mode: 'insensitive' } } } },
+              { guardians: { some: { phone: { contains: search, mode: 'insensitive' } } } },
             ],
           }
         : {}),
