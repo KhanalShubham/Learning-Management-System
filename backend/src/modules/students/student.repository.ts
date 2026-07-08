@@ -98,6 +98,10 @@ export interface IStudentRepository {
   findById(id: string): Promise<StudentWithRelations | null>;
   findAll(filters: ListStudentsFilters): Promise<{ data: StudentListItem[]; total: number }>;
   getSummary(): Promise<StudentSummary>;
+  promote(
+    studentId: string,
+    data: { academicYearId: string; classId: string; sectionId: string; rollNumber?: number }
+  ): Promise<EnrollmentWithPlacement>;
   update(id: string, data: Prisma.StudentUpdateInput): Promise<Student>;
   updateStatus(id: string, status: StudentStatus): Promise<Student>;
   delete(id: string): Promise<Student>;
@@ -260,6 +264,26 @@ export class StudentRepository implements IStudentRepository {
     ]);
 
     return { total, active, todayAdmissions, newThisMonth, archived };
+  }
+
+  public async promote(
+    studentId: string,
+    data: { academicYearId: string; classId: string; sectionId: string; rollNumber?: number }
+  ): Promise<EnrollmentWithPlacement> {
+    return prisma.enrollment.create({
+      data: {
+        studentId,
+        academicYearId: data.academicYearId,
+        classId: data.classId,
+        sectionId: data.sectionId,
+        rollNumber: data.rollNumber,
+      },
+      include: {
+        academicYear: { select: { id: true, label: true } },
+        class: { select: { id: true, name: true } },
+        section: { select: { id: true, name: true } },
+      },
+    });
   }
 
   public async update(id: string, data: Prisma.StudentUpdateInput): Promise<Student> {

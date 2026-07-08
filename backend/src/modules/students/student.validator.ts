@@ -105,6 +105,13 @@ export const updateStudentStatusSchema = z.object({
   status: z.enum(STUDENT_STATUS),
 });
 
+export const promoteStudentSchema = z.object({
+  academicYearId: z.string().uuid('Invalid Academic Year ID'),
+  classId: z.string().uuid('Invalid Class ID'),
+  sectionId: z.string().uuid('Invalid Section ID'),
+  rollNumber: z.coerce.number().int().positive().optional(),
+});
+
 export const addGuardianSchema = guardianSchema;
 
 export const updateGuardianSchema = guardianSchema.omit({ relation: true }).partial();

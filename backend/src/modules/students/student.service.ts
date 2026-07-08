@@ -8,6 +8,7 @@ import {
   GuardianInput,
   DocumentInput,
   StudentSummary,
+  EnrollmentWithPlacement,
 } from './student.repository';
 import { IAcademicYearRepository } from '@/modules/system-config/academic-year.repository';
 import { ISchoolProfileRepository } from '@/modules/system-config/school-profile.repository';
@@ -107,6 +108,30 @@ export class StudentService {
   public async deleteStudent(id: string): Promise<Student> {
     await this.getStudentById(id);
     return this.studentRepository.delete(id);
+  }
+
+  public async promoteStudent(
+    studentId: string,
+    data: { academicYearId: string; classId: string; sectionId: string; rollNumber?: number }
+  ): Promise<EnrollmentWithPlacement> {
+    await this.getStudentById(studentId);
+    await this.validateAcademicPlacement(data.academicYearId, data.classId, data.sectionId);
+
+    try {
+      return await this.studentRepository.promote(studentId, data);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const target = (error.meta?.target as string[] | undefined) ?? [];
+        if (target.includes('rollNumber')) {
+          throw new AppError(
+            'A student with this roll number already exists in this section for this academic year',
+            409
+          );
+        }
+        throw new AppError('This student already has an enrollment for that academic year', 409);
+      }
+      throw error;
+    }
   }
 
   public async addGuardian(studentId: string, data: GuardianInput) {

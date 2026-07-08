@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`GET /students/summary`**: returns `{ total, active, todayAdmissions, newThisMonth, archived }` for the Dashboard's stat tiles. `archived` counts every non-`ACTIVE` status — there is no dedicated `ARCHIVED` status value.
 - `StudentRepository.findAll`/`findById`/`admit` now include `academicYear`/`class`/`section` names on `Enrollment`, so the frontend can render a student's placement without a second lookup.
 - Students registry search now also matches a guardian's `fullName`/`phone`, not just the student's own name/admission number. Added an "Export CSV" action to the registry (paginated fetch of every row matching current filters, client-side CSV generation — `frontend/src/utils/csv.ts`).
+- **`POST /students/:id/promote`**: creates a new `Enrollment` for a student into a different academic year/class/section without touching prior enrollments, so year-over-year placement history survives. Same cross-engine placement validation as `POST /admission`; `409` on a duplicate academic-year enrollment or a roll-number collision.
+- **Audit logging**: `AuditAction` enum extended with `STUDENT_ADMITTED`/`STUDENT_UPDATED`/`STUDENT_STATUS_CHANGED`/`STUDENT_PROMOTED`/`STUDENT_DELETED`. New shared `backend/src/utils/audit-log.ts` (used by the Student Engine, callable by any future engine) writes to the same `AuditLog` table auth events already use — `POST /admission`, `PUT /:id`, `POST /:id/status`, `POST /:id/promote`, and `DELETE /:id` each append a row.
 ### Fixed
 - `frontend/src/features/auth/types/index.ts` had stale `students.create`/`students.delete` permission codes; corrected to the actual `students.admit`/`students.archive` codes the backend uses.
 

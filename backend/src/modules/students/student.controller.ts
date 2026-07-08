@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { successResponse } from '@/utils/api-response';
+import { writeAuditLog } from '@/utils/audit-log';
 import { AppError } from '@/middleware/error.middleware';
 import { uploadImageBuffer, uploadDocumentBuffer } from '@/config/cloudinary';
 import { StudentRepository } from './student.repository';
@@ -16,10 +17,18 @@ import {
   listStudentsQuerySchema,
   updateStudentSchema,
   updateStudentStatusSchema,
+  promoteStudentSchema,
   addGuardianSchema,
   updateGuardianSchema,
   addDocumentSchema,
 } from './student.validator';
+
+const auditContext = (req: Request) => ({
+  userId: req.user?.id,
+  email: req.user?.email,
+  ipAddress: req.ip,
+  userAgent: req.headers['user-agent'],
+});
 
 const studentRepository = new StudentRepository();
 const studentService = new StudentService(
@@ -35,6 +44,11 @@ export class StudentController {
     try {
       const validated = admitStudentSchema.parse(req.body);
       const student = await studentService.admitStudent(validated);
+      await writeAuditLog({
+        ...auditContext(req),
+        action: 'STUDENT_ADMITTED',
+        details: `Admitted student ${student.id} (${student.admissionNumber})`,
+      });
       return successResponse(res, 'Student admitted successfully.', { student }, 201);
     } catch (error) {
       next(error);
@@ -75,6 +89,11 @@ export class StudentController {
       const { id } = studentIdParamSchema.parse(req.params);
       const validated = updateStudentSchema.parse(req.body);
       const student = await studentService.updateStudent(id, validated);
+      await writeAuditLog({
+        ...auditContext(req),
+        action: 'STUDENT_UPDATED',
+        details: `Updated student ${id}`,
+      });
       return successResponse(res, 'Student updated successfully.', { student });
     } catch (error) {
       next(error);
@@ -86,7 +105,28 @@ export class StudentController {
       const { id } = studentIdParamSchema.parse(req.params);
       const { status } = updateStudentStatusSchema.parse(req.body);
       const student = await studentService.updateStatus(id, status);
+      await writeAuditLog({
+        ...auditContext(req),
+        action: 'STUDENT_STATUS_CHANGED',
+        details: `Student ${id} status changed to ${status}`,
+      });
       return successResponse(res, 'Student status updated successfully.', { student });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  public promoteStudent = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id } = studentIdParamSchema.parse(req.params);
+      const validated = promoteStudentSchema.parse(req.body);
+      const enrollment = await studentService.promoteStudent(id, validated);
+      await writeAuditLog({
+        ...auditContext(req),
+        action: 'STUDENT_PROMOTED',
+        details: `Student ${id} promoted to enrollment ${enrollment.id} (${enrollment.academicYear.label}, ${enrollment.class.name} - ${enrollment.section.name})`,
+      });
+      return successResponse(res, 'Student promoted successfully.', { enrollment }, 201);
     } catch (error) {
       next(error);
     }
@@ -96,6 +136,11 @@ export class StudentController {
     try {
       const { id } = studentIdParamSchema.parse(req.params);
       const student = await studentService.deleteStudent(id);
+      await writeAuditLog({
+        ...auditContext(req),
+        action: 'STUDENT_DELETED',
+        details: `Deleted student ${id} (${student.admissionNumber})`,
+      });
       return successResponse(res, 'Student deleted successfully.', { student });
     } catch (error) {
       next(error);

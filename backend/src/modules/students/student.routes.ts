@@ -40,6 +40,7 @@ router.get('/summary', canRead, studentController.getSummary);
 router.get('/:id', canRead, studentController.getStudentById);
 router.put('/:id', canUpdate, studentController.updateStudent);
 router.post('/:id/status', canArchive, studentController.updateStudentStatus);
+router.post('/:id/promote', canUpdate, studentController.promoteStudent);
 router.delete('/:id', canArchive, studentController.deleteStudent);
 
 // Guardians
