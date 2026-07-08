@@ -22,7 +22,8 @@ const baseNav: NavItemConfig[] = [
     name: 'Students',
     icon: 'GraduationCap',
     children: [
-      { name: 'All Students', path: '/students' },
+      { name: 'Dashboard', path: '/students' },
+      { name: 'All Students', path: '/students/list' },
       { name: 'Admissions Panel', path: '/students/admission' },
     ],
   },

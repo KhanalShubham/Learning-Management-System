@@ -61,6 +61,15 @@ export class StudentController {
     }
   };
 
+  public getSummary = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const summary = await studentService.getSummary();
+      return successResponse(res, 'Student summary retrieved successfully.', { summary });
+    } catch (error) {
+      next(error);
+    }
+  };
+
   public updateStudent = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id } = studentIdParamSchema.parse(req.params);

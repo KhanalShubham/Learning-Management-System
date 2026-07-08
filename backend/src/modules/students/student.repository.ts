@@ -85,10 +85,19 @@ export interface ListStudentsFilters {
   take?: number;
 }
 
+export interface StudentSummary {
+  total: number;
+  active: number;
+  todayAdmissions: number;
+  newThisMonth: number;
+  archived: number;
+}
+
 export interface IStudentRepository {
   admit(data: AdmitStudentData, admissionNumberPrefix: string): Promise<StudentWithRelations>;
   findById(id: string): Promise<StudentWithRelations | null>;
   findAll(filters: ListStudentsFilters): Promise<{ data: StudentListItem[]; total: number }>;
+  getSummary(): Promise<StudentSummary>;
   update(id: string, data: Prisma.StudentUpdateInput): Promise<Student>;
   updateStatus(id: string, status: StudentStatus): Promise<Student>;
   delete(id: string): Promise<Student>;
@@ -233,6 +242,22 @@ export class StudentRepository implements IStudentRepository {
     ]);
 
     return { data, total };
+  }
+
+  public async getSummary(): Promise<StudentSummary> {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [total, active, todayAdmissions, newThisMonth, archived] = await Promise.all([
+      prisma.student.count(),
+      prisma.student.count({ where: { status: 'ACTIVE' } }),
+      prisma.student.count({ where: { admissionDate: { gte: startOfToday } } }),
+      prisma.student.count({ where: { admissionDate: { gte: startOfMonth } } }),
+      prisma.student.count({ where: { status: { not: 'ACTIVE' } } }),
+    ]);
+
+    return { total, active, todayAdmissions, newThisMonth, archived };
   }
 
   public async update(id: string, data: Prisma.StudentUpdateInput): Promise<Student> {

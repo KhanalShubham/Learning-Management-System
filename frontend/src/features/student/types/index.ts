@@ -160,3 +160,11 @@ export interface ListStudentsResult {
   data: StudentListItem[];
   total: number;
 }
+
+export interface StudentSummary {
+  total: number;
+  active: number;
+  todayAdmissions: number;
+  newThisMonth: number;
+  archived: number;
+}

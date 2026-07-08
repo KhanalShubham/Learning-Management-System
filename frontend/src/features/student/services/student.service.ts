@@ -11,6 +11,7 @@ import type {
   ListStudentsFilters,
   ListStudentsResult,
   StudentStatus,
+  StudentSummary,
 } from '../types';
 
 /**
@@ -46,6 +47,11 @@ export const studentService = {
   async listStudents(filters: ListStudentsFilters): Promise<ListStudentsResult> {
     const response = await api.get('/students', { params: filters });
     return response.data.data;
+  },
+
+  async getSummary(): Promise<StudentSummary> {
+    const response = await api.get('/students/summary');
+    return response.data.data.summary;
   },
 
   async getStudent(id: string): Promise<StudentDetail> {

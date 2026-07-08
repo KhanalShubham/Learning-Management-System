@@ -25,6 +25,7 @@ const Subjects = lazy(() => import('@/pages/Subjects'));
 const ClassSubjects = lazy(() => import('@/pages/ClassSubjects'));
 const Users = lazy(() => import('@/pages/Users'));
 const Roles = lazy(() => import('@/pages/Roles'));
+const StudentDashboard = lazy(() => import('@/features/student/pages/StudentDashboard'));
 const Students = lazy(() => import('@/features/student/pages/Students'));
 const StudentAdmission = lazy(() => import('@/features/student/pages/StudentAdmission'));
 const StudentDetail = lazy(() => import('@/features/student/pages/StudentDetail'));
@@ -167,6 +168,16 @@ export const router = createBrowserRouter([
       },
       {
         path: 'students',
+        element: (
+          <ProtectedRoute requiredPermission="students.read">
+            <Suspense fallback={<PageLoader />}>
+              <StudentDashboard />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'students/list',
         element: (
           <ProtectedRoute requiredPermission="students.read">
             <Suspense fallback={<PageLoader />}>

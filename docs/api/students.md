@@ -48,8 +48,9 @@ Both exist because a photo/document needs to be uploaded *before* the Student re
 
 | Method | Path | Notes |
 |---|---|---|
-| GET | `/?academicYearId=&classId=&sectionId=&status=&search=&skip=&take=` | The academic-year/class/section filters match against `Enrollment`, not `Student` directly. `search` matches `firstName`, `lastName`, or `admissionNumber` (case-insensitive contains). Paginated (`skip`/`take`, default 0/20, max 100). |
-| GET | `/:id` | Includes `enrollments` (all years, most recent first), `guardians`, and `documents`. |
+| GET | `/?academicYearId=&classId=&sectionId=&status=&search=&skip=&take=` | The academic-year/class/section filters match against `Enrollment`, not `Student` directly. `search` matches `firstName`, `lastName`, or `admissionNumber` (case-insensitive contains). Paginated (`skip`/`take`, default 0/20, max 100). Each row includes its most recent `Enrollment` (with `academicYear`/`class`/`section` names) for placement display. |
+| GET | `/summary` | `{ total, active, todayAdmissions, newThisMonth, archived }` — `archived` counts every non-`ACTIVE` status, not a dedicated status value (there is no `ARCHIVED` enum member). Powers the Student Dashboard's stat tiles. |
+| GET | `/:id` | Includes `enrollments` (all years, most recent first, each with `academicYear`/`class`/`section` names), `guardians`, and `documents`. |
 | PUT | `/:id` | Profile fields only — class/section placement is never edited here; it lives on `Enrollment`, managed by the future Promotion/Transfer engines. |
 | POST | `/:id/status` | `{ status: ACTIVE\|INACTIVE\|TRANSFERRED\|GRADUATED\|WITHDRAWN }` |
 | DELETE | `/:id` | Cascades to `Enrollment`, guardians, and documents (no reference-count guard, unlike Class/Section — none of these have meaning independent of the student). |

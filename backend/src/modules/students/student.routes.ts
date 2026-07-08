@@ -36,6 +36,7 @@ router.post('/admission', canAdmit, studentController.admitStudent);
 
 // Student records
 router.get('/', canRead, studentController.getAllStudents);
+router.get('/summary', canRead, studentController.getSummary);
 router.get('/:id', canRead, studentController.getStudentById);
 router.put('/:id', canUpdate, studentController.updateStudent);
 router.post('/:id/status', canArchive, studentController.updateStudentStatus);

@@ -552,7 +552,7 @@ export default function StudentDetail() {
     try {
       await deleteStudent.mutateAsync(student.id);
       toast({ title: 'Student Deleted', variant: 'success' });
-      navigate('/students');
+      navigate('/students/list');
     } catch (err) {
       toast({ title: 'Could Not Delete Student', description: errorMessage(err), variant: 'destructive' });
     }
@@ -561,7 +561,7 @@ export default function StudentDetail() {
   return (
     <div className="space-y-6">
       <button
-        onClick={() => navigate('/students')}
+        onClick={() => navigate('/students/list')}
         className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
       >
         <ArrowLeft className="h-3.5 w-3.5" />

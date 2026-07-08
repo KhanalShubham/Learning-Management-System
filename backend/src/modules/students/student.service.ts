@@ -7,6 +7,7 @@ import {
   StudentWithRelations,
   GuardianInput,
   DocumentInput,
+  StudentSummary,
 } from './student.repository';
 import { IAcademicYearRepository } from '@/modules/system-config/academic-year.repository';
 import { ISchoolProfileRepository } from '@/modules/system-config/school-profile.repository';
@@ -87,6 +88,10 @@ export class StudentService {
 
   public async getAllStudents(filters: ListStudentsFilters) {
     return this.studentRepository.findAll(filters);
+  }
+
+  public async getSummary(): Promise<StudentSummary> {
+    return this.studentRepository.getSummary();
   }
 
   public async updateStudent(id: string, data: Prisma.StudentUpdateInput): Promise<Student> {

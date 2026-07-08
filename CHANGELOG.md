@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] - v0.6.0 Student Admission Engine (frontend)
+### Added
+- **Student Admission Engine frontend** under `frontend/src/features/student/`: Student Dashboard (landing page — stat tiles for total/today/this-month/archived, recent admissions, quick actions), Students registry (search, filter by year/class/section/status, pagination), Admission form, and a Student Detail page (Profile edit, Guardians CRUD, Documents CRUD, Enrollment History).
+- **`GET /students/summary`**: returns `{ total, active, todayAdmissions, newThisMonth, archived }` for the Dashboard's stat tiles. `archived` counts every non-`ACTIVE` status — there is no dedicated `ARCHIVED` status value.
+- `StudentRepository.findAll`/`findById`/`admit` now include `academicYear`/`class`/`section` names on `Enrollment`, so the frontend can render a student's placement without a second lookup.
+### Fixed
+- `frontend/src/features/auth/types/index.ts` had stale `students.create`/`students.delete` permission codes; corrected to the actual `students.admit`/`students.archive` codes the backend uses.
+
 ## [0.5.1] - 2026-07-08
 ### Changed
 - **Student Admission Engine reworked** before any real data existed against it — v0.5.0's design was revised based on a closer review of what the workflow needs long-term:
