@@ -280,6 +280,119 @@ async function main() {
   }
   console.log(`✅ ${subjectCatalog.length} default subjects seeded.`);
 
+  // 7. Seed reference data for the Faculty Management Engine (idempotent
+  // upserts — same rerun-safe pattern as the class/subject catalogs above).
+  const departmentCatalog = [
+    { name: 'Science', code: 'SCI' },
+    { name: 'Mathematics', code: 'MATH' },
+    { name: 'Languages', code: 'LANG' },
+    { name: 'Humanities', code: 'HUM' },
+    { name: 'Administration', code: 'ADMIN' },
+  ];
+  const createdDepartments = [];
+  for (const department of departmentCatalog) {
+    const created = await prisma.department.upsert({
+      where: { name: department.name },
+      update: {},
+      create: department,
+    });
+    createdDepartments.push(created);
+  }
+  console.log(`✅ ${createdDepartments.length} default departments seeded.`);
+
+  const designationLadder = [
+    { name: 'Principal', displayOrder: 1 },
+    { name: 'Vice Principal', displayOrder: 2 },
+    { name: 'Head of Department', displayOrder: 3 },
+    { name: 'Senior Teacher', displayOrder: 4 },
+    { name: 'Teacher', displayOrder: 5 },
+    { name: 'Assistant Teacher', displayOrder: 6 },
+  ];
+  const createdDesignations = [];
+  for (const designation of designationLadder) {
+    const created = await prisma.designation.upsert({
+      where: { name: designation.name },
+      update: {},
+      create: designation,
+    });
+    createdDesignations.push(created);
+  }
+  console.log(`✅ ${createdDesignations.length} default designations seeded.`);
+
+  const scienceDept = createdDepartments.find((d) => d.code === 'SCI')!;
+  const mathDept = createdDepartments.find((d) => d.code === 'MATH')!;
+  const teacherDesignation = createdDesignations.find((d) => d.name === 'Teacher')!;
+  const seniorTeacherDesignation = createdDesignations.find((d) => d.name === 'Senior Teacher')!;
+
+  const demoTeachers = [
+    {
+      phone: '9800000001',
+      email: 'ramesh.sharma@deukhuri.edu.np',
+      firstName: 'Ramesh',
+      lastName: 'Sharma',
+      dateOfBirth: new Date('1985-03-12'),
+      gender: 'MALE' as const,
+      departmentId: scienceDept.id,
+      designationId: seniorTeacherDesignation.id,
+      employmentType: 'FULL_TIME' as const,
+      joiningDate: new Date('2015-06-01'),
+    },
+    {
+      phone: '9800000002',
+      email: 'sunita.thapa@deukhuri.edu.np',
+      firstName: 'Sunita',
+      lastName: 'Thapa',
+      dateOfBirth: new Date('1990-08-22'),
+      gender: 'FEMALE' as const,
+      departmentId: mathDept.id,
+      designationId: teacherDesignation.id,
+      employmentType: 'FULL_TIME' as const,
+      joiningDate: new Date('2019-01-15'),
+    },
+  ];
+
+  const employeeSequence = await prisma.employeeNumberSequence.upsert({
+    where: { id: 'singleton' },
+    update: {},
+    create: { id: 'singleton', lastNumber: 0 },
+  });
+  let nextEmployeeNumber = employeeSequence.lastNumber;
+  let seededTeacherCount = 0;
+
+  for (const demo of demoTeachers) {
+    const existing = await prisma.teacher.findFirst({ where: { phone: demo.phone } });
+    if (existing) continue;
+
+    nextEmployeeNumber += 1;
+    const employeeId = `DVMS-EMP-${String(nextEmployeeNumber).padStart(4, '0')}`;
+
+    await prisma.teacher.create({
+      data: {
+        ...demo,
+        employeeId,
+        emergencyContacts: {
+          create: [
+            {
+              name: `${demo.firstName} Guardian`,
+              relation: 'Spouse',
+              phone: demo.phone,
+              isPrimary: true,
+            },
+          ],
+        },
+        leaveBalance: { create: {} },
+      },
+    });
+    seededTeacherCount += 1;
+  }
+
+  await prisma.employeeNumberSequence.update({
+    where: { id: 'singleton' },
+    data: { lastNumber: nextEmployeeNumber },
+  });
+
+  console.log(`✅ ${seededTeacherCount} demo teachers seeded.`);
+
   console.log('🌱 Seeding process completed successfully!');
 }
 
