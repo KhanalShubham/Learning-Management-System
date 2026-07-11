@@ -62,5 +62,4 @@ router.use('/exams', examsRouter);
 import documentRouter from '@/modules/documents/document.routes';
 router.use('/documents', documentRouter);
 
-export default router;
-
+export const apiRouter = router;
