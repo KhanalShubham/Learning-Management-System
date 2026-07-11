@@ -53,4 +53,4 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 startServer();
 
-export default app;
+export = app;
