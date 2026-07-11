@@ -53,4 +53,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 startServer();
 
-export = app;
+// @ts-ignore
+module.exports = app;
+// @ts-ignore
+module.exports.default = app;
