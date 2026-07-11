@@ -7,6 +7,9 @@ import http from 'http';
 const server = http.createServer(app);
 
 const startServer = async () => {
+  if (process.env.VERCEL) {
+    return;
+  }
   try {
     try {
       logger.info('Connecting to PostgreSQL database via Prisma...');
@@ -53,7 +56,4 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 startServer();
 
-// @ts-ignore
-module.exports = app;
-// @ts-ignore
-module.exports.default = app;
+export default app;
