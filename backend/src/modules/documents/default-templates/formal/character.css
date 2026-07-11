@@ -1,0 +1,274 @@
+/* Deukhuri Public School - Modern Minimal Portrait Theme */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+.certificate-container.deukhuri-modern {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+  background-color: #ffffff;
+  color: #374151;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+.deukhuri-modern .watermark-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48%;
+  height: 48%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.deukhuri-modern .border-outer {
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  position: relative;
+  z-index: 2;
+}
+
+.deukhuri-modern .border-inner {
+  border: 1px solid #C62828; /* Thin Deukhuri Red accent line */
+  padding: 30px;
+  position: relative;
+}
+
+/* Minimal Header */
+.deukhuri-modern .header-section {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.deukhuri-modern .logo-wrapper {
+  margin-bottom: 8px;
+}
+
+.deukhuri-modern .school-logo {
+  height: 70px;
+  width: auto;
+  object-fit: contain;
+}
+
+.deukhuri-modern .logo-placeholder {
+  font-size: 40px;
+  color: #C62828;
+}
+
+.deukhuri-modern .school-name {
+  font-family: 'Cinzel', serif;
+  font-size: 19px;
+  font-weight: 800;
+  color: #C62828; /* Deukhuri Red */
+  margin: 3px 0;
+  letter-spacing: 0.2px;
+}
+
+.deukhuri-modern .school-address {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  color: #111;
+  margin: 1px 0;
+}
+
+.deukhuri-modern .school-contact {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.deukhuri-modern .minimal-bar {
+  width: 15%;
+  height: 3px;
+  background-color: #C62828;
+  margin: 10px auto 0 auto;
+}
+
+/* Title Section */
+.deukhuri-modern .title-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.deukhuri-modern .certificate-title {
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  color: #111;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin: 0;
+}
+
+.deukhuri-modern .cert-serial {
+  font-size: 10px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+.deukhuri-modern .serial-no {
+  color: #C62828;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+/* Body Content */
+.deukhuri-modern .body-section {
+  text-align: justify;
+  line-height: 1.75;
+  font-size: 13.5px;
+  margin: 0 auto 28px auto;
+  max-width: 90%;
+  color: #374151;
+}
+
+.deukhuri-modern .cert-text {
+  margin-bottom: 12px;
+  text-indent: 15px;
+}
+
+.deukhuri-modern .highlight-val {
+  color: #000;
+  border-bottom: 1px solid #ddd;
+  padding: 0 3px;
+}
+
+.deukhuri-modern .student-name {
+  font-size: 15px;
+  border-bottom: 1.5px solid #C62828;
+}
+
+.deukhuri-modern .character-conduct {
+  color: #C62828;
+}
+
+/* Modern Minimal Footer */
+.deukhuri-modern .footer-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 15px;
+}
+
+.deukhuri-modern .verify-block {
+  font-size: 9px;
+  color: #6b7280;
+  width: 220px;
+}
+
+.deukhuri-modern .issue-date {
+  margin-bottom: 6px;
+}
+
+.deukhuri-modern .qr-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.deukhuri-modern .verify-qr {
+  width: 48px;
+  height: 48px;
+  border: 1px solid #e5e7eb;
+  background-color: #fff;
+  padding: 1px;
+}
+
+.deukhuri-modern .qr-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.deukhuri-modern .qr-lbl {
+  font-weight: 700;
+  font-size: 7.5px;
+  color: #111;
+}
+
+.deukhuri-modern .qr-url {
+  font-size: 7.5px;
+  font-family: monospace;
+  color: #C62828;
+}
+
+.deukhuri-modern .official-seal {
+  width: 65px;
+  height: 65px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.deukhuri-modern .school-stamp {
+  max-height: 65px;
+  width: auto;
+}
+
+.deukhuri-modern .seal-placeholder {
+  border: 1px dashed #cccccc;
+  border-radius: 50%;
+  width: 55px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.deukhuri-modern .signatures-strip {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+}
+
+.deukhuri-modern .sig-block {
+  width: 100px;
+  text-align: center;
+}
+
+.deukhuri-modern .sig-line {
+  border-bottom: 1px solid #d1d5db;
+  height: 32px;
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.deukhuri-modern .principal-sig {
+  max-height: 28px;
+  width: auto;
+}
+
+.deukhuri-modern .sig-title {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4b5563;
+}
+
+/* Print Overrides */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .deukhuri-modern {
+    padding: 0;
+    background-color: #fff !important;
+  }
+  .deukhuri-modern .watermark-overlay {
+    opacity: 0.06 !important;
+  }
+}

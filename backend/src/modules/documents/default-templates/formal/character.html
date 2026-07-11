@@ -1,0 +1,100 @@
+<div class="certificate-container deukhuri-modern">
+  <!-- Watermark logo background -->
+  {{#if school.logoUrl}}
+    <div class="watermark-overlay" style="background-image: url('{{school.logoUrl}}');"></div>
+  {{/if}}
+
+  <div class="border-outer">
+    <div class="border-inner">
+      
+      <!-- Minimal School Header -->
+      <div class="header-section">
+        <div class="logo-wrapper">
+          {{#if school.logoUrl}}
+            <img src="{{school.logoUrl}}" alt="School Logo" class="school-logo" />
+          {{else}}
+            <div class="logo-placeholder">🎓</div>
+          {{/if}}
+        </div>
+        
+        <h1 class="school-name">DEUKHURI PUBLIC ENGLISH SECONDARY SCHOOL</h1>
+        <p class="school-address">Lamahi–6, Deupur, Dang</p>
+        <p class="school-contact">Phone: {{school.phone}} | Email: {{school.email}}</p>
+        <div class="minimal-bar"></div>
+      </div>
+
+      <!-- Title area -->
+      <div class="title-section">
+        <h2 class="certificate-title">CHARACTER CERTIFICATE</h2>
+        <div class="cert-serial">
+          Registry ID: <span class="serial-no">{{document.number}}</span>
+        </div>
+      </div>
+
+      <!-- Flowing body -->
+      <div class="body-section">
+        <p class="cert-text">
+          We hereby certify that Mr./Miss <span class="highlight-val student-name"><strong>{{student.fullName}}</strong></span>, 
+          son/daughter of Mr./Mrs. <span class="highlight-val"><strong>{{student.guardianName}}</strong></span>, successfully completed 
+          his/her academic curriculum in Grade <span class="highlight-val"><strong>{{student.class}}</strong></span>, Section 
+          <span class="highlight-val"><strong>{{student.section}}</strong></span> under Admission Number 
+          <span class="highlight-val"><strong>{{student.admissionNumber}}</strong></span> during the 
+          <span class="highlight-val"><strong>{{academicYear.label}}</strong></span> academic session at 
+          <strong>Deukhuri Public English Secondary School</strong>.
+        </p>
+        <p class="cert-text">
+          During his/her period of study at this campus, his/her character and behavior were evaluated as 
+          <span class="highlight-val character-conduct"><strong>{{custom.characterConduct}}</strong></span>. 
+          We express our appreciation and wish him/her success in all future careers.
+        </p>
+      </div>
+
+      <!-- Footnote blocks -->
+      <div class="footer-layout">
+        
+        <!-- Left: Date & QR verification link -->
+        <div class="verify-block">
+          <div class="issue-date">Issued: <strong>{{date.current}}</strong></div>
+          <div class="qr-container">
+            <img src="{{document.qrCode}}" alt="Verify QR" class="verify-qr" />
+            <div class="qr-info">
+              <span class="qr-lbl">DEUKHURI LEDGER</span>
+              <span class="qr-url">/verify/{{document.id}}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center: Official Seal -->
+        <div class="official-seal">
+          {{#if school.stampUrl}}
+            <img src="{{school.stampUrl}}" alt="Official Stamp" class="school-stamp" />
+          {{else}}
+            <div class="seal-placeholder">OFFICIAL SEAL</div>
+          {{/if}}
+        </div>
+
+        <!-- Right: Signatures strip -->
+        <div class="signatures-strip">
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <span class="sig-title">Prepared By</span>
+          </div>
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <span class="sig-title">Class Teacher</span>
+          </div>
+          <div class="sig-block principal-block">
+            <div class="sig-line">
+              {{#if principal.signatureUrl}}
+                <img src="{{principal.signatureUrl}}" alt="Principal Signature" class="principal-sig" />
+              {{/if}}
+            </div>
+            <span class="sig-title">Principal</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

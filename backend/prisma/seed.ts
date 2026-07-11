@@ -50,8 +50,11 @@ const permissionsList = [
   // Attendance Module
   { code: 'attendance.mark', description: 'Mark student class attendance records' },
   { code: 'attendance.view', description: 'View attendance logs and graphs' },
+  { code: 'attendance.teacher.mark', description: 'Mark teacher attendance records (Admin only)' },
+  { code: 'attendance.teacher.view', description: 'View teacher attendance logs (Admin only)' },
 
   // Exam Grading Module
+  { code: 'exams.manage', description: 'Manage exams cycles, schedules, and grading rules' },
   { code: 'exams.publish', description: 'Publish exam schedules and bounds' },
   { code: 'exams.enter', description: 'Input grading ledger marks' },
   { code: 'exams.view', description: 'View grade transcripts and cards' },
@@ -115,6 +118,9 @@ const adminPermissions = [
   'teachers.documents',
   'attendance.mark',
   'attendance.view',
+  'attendance.teacher.mark',
+  'attendance.teacher.view',
+  'exams.manage',
   'exams.publish',
   'exams.enter',
   'exams.view',

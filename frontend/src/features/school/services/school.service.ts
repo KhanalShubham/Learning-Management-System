@@ -87,6 +87,10 @@ export const schoolService = {
     return uploadBrandingImage('/system/branding/report-footer', file);
   },
 
+  async uploadCoverImage(file: File): Promise<SchoolBranding> {
+    return uploadBrandingImage('/system/branding/cover', file);
+  },
+
   async getLeadership(): Promise<LeadershipEntry[]> {
     const response = await api.get('/system/leadership');
     return response.data.data.leadership;

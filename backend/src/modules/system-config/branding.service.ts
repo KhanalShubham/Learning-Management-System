@@ -7,7 +7,8 @@ export type BrandingImageField =
   | 'stampUrl'
   | 'principalSignatureUrl'
   | 'reportHeaderImageUrl'
-  | 'reportFooterImageUrl';
+  | 'reportFooterImageUrl'
+  | 'coverImageUrl';
 
 export class BrandingService {
   constructor(private brandingRepository: IBrandingRepository) {}

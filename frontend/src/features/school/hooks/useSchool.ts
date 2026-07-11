@@ -44,7 +44,7 @@ export const useUpdateBranding = () => {
 };
 
 export const useUploadBrandingImage = (
-  field: 'logo' | 'favicon' | 'stamp' | 'signature' | 'reportHeader' | 'reportFooter'
+  field: 'logo' | 'favicon' | 'stamp' | 'signature' | 'reportHeader' | 'reportFooter' | 'cover'
 ) => {
   const queryClient = useQueryClient();
   const uploader = {
@@ -54,6 +54,7 @@ export const useUploadBrandingImage = (
     signature: schoolService.uploadSignature,
     reportHeader: schoolService.uploadReportHeader,
     reportFooter: schoolService.uploadReportFooter,
+    cover: schoolService.uploadCoverImage,
   }[field];
 
   return useMutation({

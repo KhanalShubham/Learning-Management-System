@@ -1,0 +1,344 @@
+/* Deukhuri Public School - Premium Red & Gold Landscape Theme */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+.certificate-container.deukhuri-premium {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 30px;
+  background-color: #ffffff;
+  color: #111111;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+.deukhuri-premium .watermark-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 45%;
+  height: 45%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Luxury Corner Accent Lines */
+.deukhuri-premium .corner-ornament {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-color: #D4AF37; /* Gold */
+  border-style: solid;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.deukhuri-premium .corner-ornament.top-left {
+  top: 25px;
+  left: 25px;
+  border-width: 4px 0 0 4px;
+}
+
+.deukhuri-premium .corner-ornament.top-right {
+  top: 25px;
+  right: 25px;
+  border-width: 4px 4px 0 0;
+}
+
+.deukhuri-premium .corner-ornament.bottom-left {
+  bottom: 25px;
+  left: 25px;
+  border-width: 0 0 4px 4px;
+}
+
+.deukhuri-premium .corner-ornament.bottom-right {
+  bottom: 25px;
+  right: 25px;
+  border-width: 0 4px 4px 0;
+}
+
+.deukhuri-premium .border-outer {
+  border: 4px double #D4AF37; /* Gold double border */
+  padding: 8px;
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.deukhuri-premium .border-inner {
+  border: 2px solid #C62828; /* Deukhuri Red inner border */
+  padding: 30px;
+  height: 100%;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Institutional Header in Landscape Layout */
+.deukhuri-premium .header-section {
+  margin-bottom: 22px;
+}
+
+.deukhuri-premium .header-top-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  justify-content: center;
+}
+
+.deukhuri-premium .school-logo {
+  height: 75px;
+  width: auto;
+  object-fit: contain;
+}
+
+.deukhuri-premium .logo-placeholder {
+  font-size: 45px;
+  color: #C62828;
+}
+
+.deukhuri-premium .title-details {
+  text-align: left;
+}
+
+.deukhuri-premium .school-name {
+  font-family: 'Cinzel', serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #C62828; /* Deukhuri Red */
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.deukhuri-premium .school-address {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 3px 0 0 0;
+}
+
+.deukhuri-premium .motto-italic {
+  font-family: 'Cinzel', serif;
+  font-style: italic;
+  font-weight: 700;
+  color: #D4AF37; /* Gold */
+}
+
+.deukhuri-premium .school-meta {
+  font-family: 'Inter', sans-serif;
+  font-size: 9.5px;
+  color: #666;
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.deukhuri-premium .premium-divider {
+  width: 80%;
+  height: 1.5px;
+  background-color: #D4AF37;
+  margin: 12px auto 0 auto;
+  position: relative;
+}
+
+.deukhuri-premium .diamond-point {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background-color: #C62828;
+  border: 1px solid #D4AF37;
+}
+
+/* Title Block */
+.deukhuri-premium .title-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.deukhuri-premium .certificate-title {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  color: #C62828;
+  font-weight: 800;
+  letter-spacing: 3px;
+  margin: 0;
+}
+
+.deukhuri-premium .cert-serial {
+  font-size: 11px;
+  color: #555;
+  margin-top: 5px;
+}
+
+.deukhuri-premium .serial-no {
+  color: #C62828;
+  font-family: monospace;
+}
+
+/* Body Copy */
+.deukhuri-premium .body-section {
+  text-align: justify;
+  line-height: 1.8;
+  font-size: 14px;
+  margin: 0 auto 28px auto;
+  max-width: 88%;
+  color: #222;
+}
+
+.deukhuri-premium .cert-text {
+  margin-bottom: 12px;
+  text-indent: 20px;
+}
+
+.deukhuri-premium .highlight-val {
+  color: #111111;
+  border-bottom: 1.5px solid #D4AF37;
+  padding: 0 4px;
+}
+
+.deukhuri-premium .student-name {
+  font-size: 15.5px;
+  border-bottom: 2px solid #C62828;
+}
+
+.deukhuri-premium .character-conduct {
+  color: #C62828;
+}
+
+/* Landscape Footer Layout */
+.deukhuri-premium .footer-layout {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid rgba(212, 175, 55, 0.2);
+  padding-top: 15px;
+}
+
+.deukhuri-premium .verify-block {
+  font-size: 9.5px;
+  color: #666;
+  width: 250px;
+}
+
+.deukhuri-premium .issue-date {
+  margin-bottom: 3px;
+}
+
+.deukhuri-premium .verify-url {
+  font-family: monospace;
+  margin-bottom: 8px;
+}
+
+.deukhuri-premium .qr-container-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.deukhuri-premium .verify-qr {
+  width: 50px;
+  height: 50px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  padding: 1px;
+}
+
+.deukhuri-premium .qr-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.deukhuri-premium .qr-title {
+  font-weight: 700;
+  color: #C62828;
+  font-size: 8px;
+  letter-spacing: 0.5px;
+}
+
+.deukhuri-premium .qr-subtitle {
+  font-size: 7.5px;
+  color: #777;
+}
+
+.deukhuri-premium .official-seal {
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.deukhuri-premium .school-stamp {
+  max-height: 70px;
+  width: auto;
+}
+
+.deukhuri-premium .seal-placeholder {
+  border: 1.5px dashed #D4AF37;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #C62828;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.deukhuri-premium .signatures-strip {
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+}
+
+.deukhuri-premium .sig-block {
+  width: 110px;
+  text-align: center;
+}
+
+.deukhuri-premium .sig-line {
+  border-bottom: 1.5px solid #D4AF37;
+  height: 32px;
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.deukhuri-premium .principal-sig {
+  max-height: 30px;
+  width: auto;
+}
+
+.deukhuri-premium .sig-title {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #555;
+}
+
+/* Print Settings */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .deukhuri-premium {
+    padding: 0;
+    background-color: #fff !important;
+  }
+  .deukhuri-premium .watermark-overlay {
+    opacity: 0.06 !important;
+  }
+}

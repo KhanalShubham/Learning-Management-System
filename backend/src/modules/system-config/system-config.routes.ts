@@ -50,6 +50,12 @@ router.post(
   upload.single('file'),
   brandingController.uploadReportFooter
 );
+router.post(
+  '/branding/cover',
+  readWrite,
+  upload.single('file'),
+  brandingController.uploadCover
+);
 
 // Leadership
 const leadershipController = new LeadershipController();

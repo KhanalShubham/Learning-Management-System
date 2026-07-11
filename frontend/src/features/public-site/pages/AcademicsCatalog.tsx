@@ -13,7 +13,7 @@ export const AcademicsCatalog = () => {
         eyebrow="Academics"
         title="Four levels, one continuous curriculum"
         description="Every level builds on the one before it — see what's taught, and what a student picks up beyond the textbook, at each stage."
-        crumbs={[{ label: 'Home', to: '/public' }, { label: 'Academics' }]}
+        crumbs={[{ label: 'Home', to: '/' }, { label: 'Academics' }]}
       />
 
       <section className="py-16 sm:py-20">
@@ -21,7 +21,7 @@ export const AcademicsCatalog = () => {
           {gradeLevels.map((grade, i) => (
             <SectionReveal key={grade.slug} delay={i * 0.08}>
               <Link
-                to={`/public/academics/${grade.slug}`}
+                to={`/academics/${grade.slug}`}
                 className="group block h-full rounded-[var(--radius-card)] border border-[var(--brand-border)] bg-[var(--brand-white)] p-8 hover:border-[var(--brand-red)] transition-colors"
               >
                 <Badge tone={grade.tone}>{grade.range}</Badge>

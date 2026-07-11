@@ -34,6 +34,7 @@ export interface SchoolBranding {
   reportFooterImageUrl: string | null;
   primaryColor: string | null;
   secondaryColor: string | null;
+  coverImageUrl: string | null;
   createdAt: string;
   updatedAt: string;
 }

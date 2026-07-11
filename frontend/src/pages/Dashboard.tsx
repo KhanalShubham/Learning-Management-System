@@ -23,13 +23,16 @@ export default function Dashboard() {
   const [showcaseModal, setShowcaseModal] = useState(false);
   const [loadingState, setLoadingState] = useState(false);
 
+  const adminStats = [
+    { title: 'Total Enrolled Students', value: '1,248', change: '+4.3%', changeType: 'positive' as const, icon: 'GraduationCap', color: 'blue' as const },
+    { title: 'Academic Faculty Staff', value: '86', change: '+2.1%', changeType: 'positive' as const, icon: 'Users', color: 'emerald' as const },
+    { title: 'Monthly Bill Collections', value: 'रू 24,500', change: '+12.4%', changeType: 'positive' as const, icon: 'DollarSign', color: 'violet' as const },
+    { title: 'Active Attendance Rate', value: '94.2%', change: '-0.8%', changeType: 'negative' as const, icon: 'Activity', color: 'amber' as const },
+  ];
+
   const stats = {
-    admin: [
-      { title: 'Total Enrolled Students', value: '1,248', change: '+4.3%', changeType: 'positive' as const, icon: 'GraduationCap', color: 'blue' as const },
-      { title: 'Academic Faculty Staff', value: '86', change: '+2.1%', changeType: 'positive' as const, icon: 'Users', color: 'emerald' as const },
-      { title: 'Monthly Bill Collections', value: 'रू 24,500', change: '+12.4%', changeType: 'positive' as const, icon: 'DollarSign', color: 'violet' as const },
-      { title: 'Active Attendance Rate', value: '94.2%', change: '-0.8%', changeType: 'negative' as const, icon: 'Activity', color: 'amber' as const },
-    ],
+    admin: adminStats,
+    super_admin: adminStats,
     teacher: [
       { title: 'My Lectures Scheduled', value: '4 Classes', change: '8 hrs/week', changeType: 'neutral' as const, icon: 'CalendarDays', color: 'emerald' as const },
       { title: 'Students Supervised', value: '185', change: 'Grade 9 & 10', changeType: 'neutral' as const, icon: 'GraduationCap', color: 'blue' as const },

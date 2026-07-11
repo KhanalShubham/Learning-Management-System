@@ -114,6 +114,7 @@ export interface ITeacherRepository {
   countClassSubjects(id: string): Promise<number>;
 
   addQualification(teacherId: string, data: QualificationInput): Promise<TeacherQualification>;
+  findQualificationById(qualificationId: string): Promise<TeacherQualification | null>;
   deleteQualification(qualificationId: string): Promise<TeacherQualification>;
 
   findEmergencyContactById(contactId: string): Promise<TeacherEmergencyContact | null>;
@@ -127,6 +128,7 @@ export interface ITeacherRepository {
   deleteEmergencyContact(contactId: string): Promise<TeacherEmergencyContact>;
 
   addDocument(teacherId: string, data: DocumentInput): Promise<TeacherDocument>;
+  findDocumentById(documentId: string): Promise<TeacherDocument | null>;
   deleteDocument(documentId: string): Promise<TeacherDocument>;
 
   getLeaveBalance(teacherId: string): Promise<TeacherLeaveBalance | null>;
@@ -270,6 +272,10 @@ export class TeacherRepository implements ITeacherRepository {
     return prisma.teacherQualification.create({ data: { ...data, teacherId } });
   }
 
+  public async findQualificationById(qualificationId: string): Promise<TeacherQualification | null> {
+    return prisma.teacherQualification.findUnique({ where: { id: qualificationId } });
+  }
+
   public async deleteQualification(qualificationId: string): Promise<TeacherQualification> {
     return prisma.teacherQualification.delete({ where: { id: qualificationId } });
   }
@@ -312,6 +318,10 @@ export class TeacherRepository implements ITeacherRepository {
 
   public async addDocument(teacherId: string, data: DocumentInput): Promise<TeacherDocument> {
     return prisma.teacherDocument.create({ data: { ...data, teacherId } });
+  }
+
+  public async findDocumentById(documentId: string): Promise<TeacherDocument | null> {
+    return prisma.teacherDocument.findUnique({ where: { id: documentId } });
   }
 
   public async deleteDocument(documentId: string): Promise<TeacherDocument> {

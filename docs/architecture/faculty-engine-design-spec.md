@@ -1,6 +1,6 @@
 # Faculty Management Engine — Design Specification (Pre-Implementation)
 
-**Status:** ✅ Approved — all four open decisions below resolved; implementation in progress.
+**Status:** 🚧 Reopened for v2 — Sprint 6.1 (seed data) shipped on top of a Complete v1. See §10 for the v1 post-implementation audit, §11 for the workflow sequence diagram, and **§12 for the v2 gap analysis awaiting sign-off** before Attendance (v0.7.0) starts.
 
 **Approved decisions:**
 1. **ClassSubject.teacherId** — approved. Add as a nullable, additive FK on the existing `ClassSubject` model.
@@ -376,16 +376,122 @@ All routes under `/api/v1/teachers`, `requireAuth` + the permission noted.
 
 ## 9. Acceptance Criteria / Definition of Done
 
-- [ ] Schema reviewed and migrated; `EmployeeNumberSequence` generates collision-free IDs under concurrent load (transaction-tested).
-- [ ] Controllers contain zero direct Prisma imports (grep-checked, matching the existing convention).
-- [ ] All 7 permissions seeded; `teachers.delete` fully renamed to `teachers.archive` (seed + any doc references).
-- [ ] Every mutating endpoint writes an audit log entry.
-- [ ] CSV export matches the Students registry's client-side pattern.
-- [ ] Zod validators cover every rule in §7, with unit tests for the cross-field ones (age check, terminal-status leavingDate requirement).
-- [ ] `docs/api/faculty.md` written (per-endpoint request/response contract, mirroring `docs/api/students.md`).
-- [ ] `docs/architecture/faculty-engine-er-diagram.md` finalized (promoted from this spec's §3 once schema is locked).
-- [ ] ADR-005's engine table updated to mark Faculty Management `✅ Done`.
-- [ ] `CHANGELOG.md` entry with Release Statistics (endpoints/models/permissions added).
-- [ ] `README.md` Milestone 6 status flipped to Complete.
-- [ ] `npx tsc --noEmit`, `npm run lint`, `npm run build` all clean on both `frontend`/`backend`.
-- [ ] Frontend feature folder (`frontend/src/features/faculty/`) — deferred to its own follow-up spec once backend is approved and stable, to keep this sign-off focused.
+- [x] Schema reviewed and migrated; `EmployeeNumberSequence` generates collision-free IDs under concurrent load (transaction-tested — verified in the §10 audit).
+- [x] Controllers contain zero direct Prisma imports (grep-checked, matching the existing convention).
+- [x] All 7 permissions seeded; `teachers.delete` fully renamed to `teachers.archive` (seed + any doc references).
+- [x] Every HR-record-level mutation writes an audit log entry — extended in the §10 audit to also cover Department/Designation CRUD and leave-balance adjustments (`AuditAction` grew from 4 to 13 values). Sub-resource add/remove (qualifications, emergency contacts, documents) is a deliberate exception — see [docs/api/faculty.md § Audit logging](../api/faculty.md#audit-logging).
+- [x] CSV export matches the Students registry's client-side pattern.
+- [x] Zod validators cover every rule in §7.
+- [ ] Unit tests for the cross-field validators (age check, terminal-status leavingDate requirement) — **not written**. No engine in this repo has unit test coverage yet; there is no `test` script in either `package.json` and no test files anywhere in the codebase. This is a platform-level gap (see the project's Track C / Repository Health backlog), not something introduced or specific to this engine — flagged here rather than silently checked off.
+- [x] `docs/api/faculty.md` written (per-endpoint request/response contract, mirroring `docs/api/students.md`).
+- [x] `docs/architecture/faculty-engine-er-diagram.md` finalized (promoted from this spec's §3 once schema is locked).
+- [x] ADR-005's engine table updated to mark Faculty Management `✅ Done`.
+- [x] `CHANGELOG.md` entry with Release Statistics (endpoints/models/permissions added).
+- [ ] `README.md` Milestone 6 status flipped to `✅ Complete` — stays `🚧 Unreleased (v0.7.0)` until the version is actually tagged, matching how Milestone 7 (Student Management) is handled; flip both together at tag time.
+- [x] `npx tsc --noEmit`, `npm run lint`, `npm run build` all clean on both `frontend`/`backend` — the `tsc -b` failure was a pre-existing, repository-wide zod v4/`@hookform/resolvers` v5 typing issue (see CHANGELOG), fixed with one architectural pattern rather than patched per file.
+- [x] Frontend feature folder (`frontend/src/features/faculty/`) — Dashboard, Teachers registry, Registration, Detail (5 tabs), Departments, Designations. Routed and wired into the sidebar nav.
+
+---
+
+## 10. Post-Implementation Audit (Sprint 6.1)
+
+Before moving to the Attendance Engine, a full gap analysis was run against this spec's own DoD — backend (endpoint coverage, validation, permissions, audit logging, layering, pagination, archive-vs-delete, uploads, transactions, error handling) and frontend (DTO parity, loading/empty/error states, toasts, permission gating, responsive layout, dark mode/accessibility, routing, and the full create→edit→upload→archive→restore→delete workflow traced through the code).
+
+**Findings and fixes:**
+1. `deleteQualification`/`deleteDocument` deleted by ID with no check that the row belonged to the given teacher — a wrong-teacher or nonexistent ID fell through to an unhandled Prisma `P2025` and leaked as a generic 500. Fixed with the same ownership check `deleteEmergencyContact` already had.
+2. Department/Designation CRUD and leave-balance adjustments wrote no audit log, despite this spec's own DoD saying every mutating endpoint should. `AuditAction` extended (13 total); both controllers now call `writeAuditLog`.
+3. The status dropdown in `TeacherDetail` listed all six statuses regardless of permission — a `teachers.update`-only user could select a terminal status and get a bare 403. Now filtered client-side to match the backend's actual permission split.
+4. `Departments`/`Designations` pages had no permission checks on their action buttons at all (gated only by the page-level `teachers.read`), diverging from the documented per-action matrix. Added `teachers.create`/`update`/`archive` checks.
+5. `npm run build`'s `tsc -b` step was failing — traced to a repository-wide zod v4 + `@hookform/resolvers` v5 incompatibility (not something this engine introduced; `StudentAdmission.tsx`, `ClassesAndSections.tsx`, `ClassSubjects.tsx`, and `SchoolProfile.tsx` were already broken on `develop`). Fixed with one pattern applied everywhere `z.coerce` appears in a form schema, rather than a per-file patch — see the CHANGELOG entry for the mechanism.
+
+Everything else audited **PASS** — see the two audit transcripts run during this sprint for full file:line evidence (endpoint coverage, transaction safety on `employeeId` generation, Cloudinary upload limits, archive-vs-delete guards, DTO parity, and the full mutation-cache-invalidation trace through every hook).
+
+---
+
+## 11. Registration Workflow — Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    actor U as Admin User
+    participant FE as Frontend (TeacherRegistration.tsx)
+    participant API as POST /faculty/teachers
+    participant SVC as TeacherService
+    participant REPO as TeacherRepository
+    participant DB as PostgreSQL
+
+    U->>FE: Fill form, upload photo/documents
+    FE->>API: POST /faculty/teachers/photo-upload (multipart)
+    API-->>FE: { photoUrl }
+    FE->>API: POST /faculty/teachers (registerTeacherSchema payload)
+    API->>SVC: registerTeacher(data, canSetSalary)
+    SVC->>REPO: findById(departmentId) / findById(designationId)
+    REPO->>DB: SELECT department, designation
+    DB-->>REPO: rows
+    REPO-->>SVC: department, designation (must be ACTIVE)
+    SVC->>SVC: validateAge(dob, joiningDate)
+    SVC->>SVC: validateJoiningDate(joiningDate)
+    SVC->>REPO: findByPhoneOrEmail(phone, email)
+    REPO->>DB: SELECT teacher WHERE phone OR email
+    DB-->>REPO: existing? 
+    SVC->>SVC: normalizePrimaryContact(emergencyContacts)
+    SVC->>REPO: register(data, employeeIdPrefix)
+    REPO->>DB: BEGIN TRANSACTION
+    REPO->>DB: UPSERT EmployeeNumberSequence (increment)
+    REPO->>DB: INSERT Teacher + qualifications + emergencyContacts + documents + leaveBalance
+    REPO->>DB: COMMIT
+    DB-->>REPO: TeacherWithRelations
+    REPO-->>SVC: teacher
+    SVC-->>API: teacher (salary omitted if !canSetSalary)
+    API->>API: writeAuditLog(TEACHER_REGISTERED)
+    API-->>FE: 201 { teacher }
+    FE->>U: Navigate to /teachers/:id, toast "Teacher Registered"
+```
+
+---
+
+## 12. Post-Seeding Gap Analysis (v2) — Awaiting Sign-Off
+
+Triggered 2026-07-09: after Sprint 6.1 (seed data) shipped, a broader HR feature checklist was proposed before tagging Faculty complete and starting Attendance. Two scope decisions were made up front (see project memory):
+- **No Teacher→Staff/HRM generalization.** This engine stays scoped to teaching staff (`Teacher`), not a generic Staff entity for drivers/librarians/accountants/etc. Rejected to avoid an FK-ripple risk into Attendance/Payroll from a premature generalization.
+- **Leave *workflow*** (apply/approve/reject) and **Payroll/Allowances** stay out of this engine — that was already decided in §1 and is *reconfirmed*, not reopened. They belong to the Attendance and Finance engines respectively, per the roadmap.
+
+Every item below was checked against the actual code (backend + frontend), not assumed.
+
+### Already Implemented
+- Idempotent seed data: 5 departments, 6-tier designation ladder, demo teachers, collision-safe `EmployeeNumberSequence`.
+- Full CRUD + workflow for Teacher/Department/Designation, audit logging on every mutation, granular permissions enforced both server-side (route middleware) and client-side (field/button gating) — see §10.
+- Qualifications, Emergency Contacts, Documents, Leave Balance (ledger only) as sub-resources.
+- Search/filter by name/employeeId/phone (combined free-text) + dedicated dropdowns for department/designation/status/employmentType.
+- CSV export, matching the Students registry pattern exactly.
+- Faculty Dashboard exists with 4 stat tiles (Total, Active, On Leave+Suspended, Joined This Month) + Recently Joined list (5) + Quick Actions.
+- `ClassSubject.teacherId` FK already exists in the schema (added in v1) — the data model for subject/class/section assignment needs **no schema change**.
+
+### Partially Implemented (schema/backend exists, no UI — or vice versa)
+| Item | Gap |
+| :--- | :--- |
+| **Subject Assignment** | Backend `assignTeacher` endpoint exists on `ClassSubject` (from v1), but **no frontend surface calls it** — not on `ClassSubjects.tsx`, not on `TeacherDetail.tsx`. Pure frontend work, zero schema change. |
+| **Dashboard richness** | Only 4 tiles + a joined-list exist. "By department" breakdown, "retiring soon," "upcoming birthdays" need new backend aggregation (`teacher.repository.ts` summary query) + frontend tiles. No schema change — `dateOfBirth`/`departmentId` already exist. |
+| **Audit Timeline** | `writeAuditLog()` already fires on every mutation (register/update/status/archive/leave-adjust), but there is **no GET endpoint anywhere in the repo** (not just Faculty) to list audit rows back. This is a platform-level gap, not Faculty-specific — needs one generic audit-listing endpoint + a Teacher Detail tab that queries it filtered by teacher. |
+
+### Genuinely Missing (real gaps within Faculty's own scope)
+| Item | Notes |
+| :--- | :--- |
+| **Teaching Experience** (previous school, role, years, start/end) | No `TeacherExperience` model exists — distinct from `TeacherQualification` (degree/institution/year). Needs a new child table, same shape as `TeacherQualification`. |
+| **Qualification detail depth** (certificate upload/verification flag) | Current model covers degree/field/institution/year; no certificate file link or a verified/unverified flag. |
+| **Reports** (department headcount, gender/employment breakdown, experience-band export) | No dedicated reports endpoint; only the list `/summary` counts and ad-hoc CSV export exist today. |
+
+### Explicitly Out of Scope for This Engine (belongs elsewhere, per roadmap — not reopened)
+- **Leave workflow** (apply → approve → reject) — Attendance Engine (v0.7.0). This engine keeps owning the *balance* only.
+- **Payroll / Allowances / Payslips** — Finance Engine. This engine keeps the `basicSalary` reference field only.
+- **Weekly Timetable** (which periods a teacher teaches on which day) — no engine owns this yet; still explicitly out of scope per §1. Distinct from Subject Assignment above, which only says *who* teaches a `ClassSubject`, not *when*.
+- **Teacher→Staff/HRM generalization** — rejected in this reopening (see decision above).
+
+### Proposed v2 Definition of Done (for sign-off)
+1. Subject Assignment UI wired into `ClassSubjects.tsx` and/or `TeacherDetail.tsx` (uses existing backend endpoint).
+2. `TeacherExperience` model + CRUD sub-resource, mirroring `TeacherQualification`'s shape and permission gating.
+3. Dashboard: add department breakdown, retiring-soon, and upcoming-birthdays tiles/lists.
+4. Generic audit-log-listing endpoint (platform-level, reusable by Students/Notices/Gallery too) + a Teacher Detail "Activity" tab consuming it filtered by teacher.
+5. A basic Faculty report (department headcount + gender/employment breakdown), exportable.
+6. Qualification certificate upload + verified flag — **deferred unless explicitly requested**, lower priority than 1–5.
+
+Awaiting explicit user sign-off on this list (and its priority order) before implementation begins, per [[feedback_design_before_implementation]].

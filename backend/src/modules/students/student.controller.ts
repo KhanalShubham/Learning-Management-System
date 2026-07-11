@@ -47,6 +47,8 @@ export class StudentController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'STUDENT_ADMITTED',
+        entityType: 'student',
+        entityId: student.id,
         details: `Admitted student ${student.id} (${student.admissionNumber})`,
       });
       return successResponse(res, 'Student admitted successfully.', { student }, 201);
@@ -92,6 +94,8 @@ export class StudentController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'STUDENT_UPDATED',
+        entityType: 'student',
+        entityId: id,
         details: `Updated student ${id}`,
       });
       return successResponse(res, 'Student updated successfully.', { student });
@@ -108,6 +112,8 @@ export class StudentController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'STUDENT_STATUS_CHANGED',
+        entityType: 'student',
+        entityId: id,
         details: `Student ${id} status changed to ${status}`,
       });
       return successResponse(res, 'Student status updated successfully.', { student });
@@ -124,6 +130,8 @@ export class StudentController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'STUDENT_PROMOTED',
+        entityType: 'student',
+        entityId: id,
         details: `Student ${id} promoted to enrollment ${enrollment.id} (${enrollment.academicYear.label}, ${enrollment.class.name} - ${enrollment.section.name})`,
       });
       return successResponse(res, 'Student promoted successfully.', { enrollment }, 201);
@@ -139,6 +147,8 @@ export class StudentController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'STUDENT_DELETED',
+        entityType: 'student',
+        entityId: id,
         details: `Deleted student ${id} (${student.admissionNumber})`,
       });
       return successResponse(res, 'Student deleted successfully.', { student });

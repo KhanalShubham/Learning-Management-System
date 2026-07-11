@@ -51,10 +51,18 @@ export function Hero() {
         </div>
 
         <motion.div {...fadeUp(0.2)} className="relative">
-          <div className="aspect-[4/5] w-full rounded-[var(--radius-card)] bg-gradient-to-br from-[var(--brand-charcoal)] to-[var(--brand-charcoal-700)] flex flex-col items-center justify-center gap-3 text-white/60 shadow-[var(--shadow-lg)]">
-            <Camera className="h-10 w-10" />
-            <p className="text-sm font-medium">Campus photography coming soon</p>
-          </div>
+          {site?.coverImageUrl ? (
+            <img
+              src={site.coverImageUrl}
+              alt={`${site.schoolName ?? 'School'} Campus`}
+              className="aspect-[4/5] w-full rounded-[var(--radius-card)] object-cover shadow-[var(--shadow-lg)]"
+            />
+          ) : (
+            <div className="aspect-[4/5] w-full rounded-[var(--radius-card)] bg-gradient-to-br from-[var(--brand-charcoal)] to-[var(--brand-charcoal-700)] flex flex-col items-center justify-center gap-3 text-white/60 shadow-[var(--shadow-lg)]">
+              <Camera className="h-10 w-10" />
+              <p className="text-sm font-medium">Campus photography coming soon</p>
+            </div>
+          )}
 
           <FloatingCard
             className="absolute -left-6 top-8 hidden sm:flex"

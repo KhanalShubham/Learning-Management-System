@@ -11,7 +11,7 @@ export const ProgramDetail = () => {
   const grade = gradeLevels.find((g) => g.slug === slug);
 
   if (!grade) {
-    return <Navigate to="/public/academics" replace />;
+    return <Navigate to="/academics" replace />;
   }
 
   return (
@@ -21,8 +21,8 @@ export const ProgramDetail = () => {
         title={grade.label}
         description={grade.description}
         crumbs={[
-          { label: 'Home', to: '/public' },
-          { label: 'Academics', to: '/public/academics' },
+          { label: 'Home', to: '/' },
+          { label: 'Academics', to: '/academics' },
           { label: grade.label },
         ]}
       />
@@ -69,10 +69,10 @@ export const ProgramDetail = () => {
               </p>
             </div>
             <div className="flex gap-3 shrink-0">
-              <Button to="/public/fees" variant="outline">
+              <Button to="/fees" variant="outline">
                 View Fees
               </Button>
-              <Button href="/public#admissions" variant="primary">
+              <Button href="#admissions" variant="primary">
                 Apply Now
               </Button>
             </div>
@@ -80,7 +80,7 @@ export const ProgramDetail = () => {
         </Container>
 
         <Container className="mt-10">
-          <Link to="/public/academics" className="text-sm font-semibold text-[var(--brand-red)] hover:text-[var(--brand-red-dark)] transition-colors">
+          <Link to="/academics" className="text-sm font-semibold text-[var(--brand-red)] hover:text-[var(--brand-red-dark)] transition-colors">
             ← Back to all levels
           </Link>
         </Container>

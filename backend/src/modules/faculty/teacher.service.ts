@@ -208,6 +208,10 @@ export class TeacherService {
 
   public async deleteQualification(teacherId: string, qualificationId: string) {
     await this.findTeacherOrThrow(teacherId);
+    const qualification = await this.teacherRepository.findQualificationById(qualificationId);
+    if (!qualification || qualification.teacherId !== teacherId) {
+      throw new AppError('Qualification not found', 404);
+    }
     return this.teacherRepository.deleteQualification(qualificationId);
   }
 
@@ -255,6 +259,10 @@ export class TeacherService {
 
   public async deleteDocument(teacherId: string, documentId: string) {
     await this.findTeacherOrThrow(teacherId);
+    const document = await this.teacherRepository.findDocumentById(documentId);
+    if (!document || document.teacherId !== teacherId) {
+      throw new AppError('Document not found', 404);
+    }
     return this.teacherRepository.deleteDocument(documentId);
   }
 

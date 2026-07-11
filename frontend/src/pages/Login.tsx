@@ -43,7 +43,7 @@ export default function Login() {
         description: 'Welcome back to Deukhuri Digital Campus.',
         variant: 'success',
       });
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       const error = err as AxiosError<{ message?: string }>;
       toast({

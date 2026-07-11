@@ -90,7 +90,8 @@ const admissionSchema = z
     { message: 'Each guardian relation can only be added once', path: ['guardians'] }
   );
 
-type AdmissionFields = z.infer<typeof admissionSchema>;
+type AdmissionFormInput = z.input<typeof admissionSchema>;
+type AdmissionFields = z.output<typeof admissionSchema>;
 
 const errorMessage = (err: unknown) =>
   (err as AxiosError<{ message?: string }>)?.response?.data?.message || 'Please try again.';
@@ -114,7 +115,7 @@ export default function StudentAdmission() {
     watch,
     setValue,
     formState: { errors, isSubmitting },
-  } = useForm<AdmissionFields>({
+  } = useForm<AdmissionFormInput, unknown, AdmissionFields>({
     resolver: zodResolver(admissionSchema),
     defaultValues: {
       academicYearId: '',
@@ -190,7 +191,7 @@ export default function StudentAdmission() {
     try {
       const student = await admitStudent.mutateAsync(payload);
       toast({ title: 'Student Admitted', description: `Admission number ${student.admissionNumber}`, variant: 'success' });
-      navigate(`/students/${student.id}`);
+      navigate(`/dashboard/students/${student.id}`);
     } catch (err) {
       toast({ title: 'Admission Failed', description: errorMessage(err), variant: 'destructive' });
     }

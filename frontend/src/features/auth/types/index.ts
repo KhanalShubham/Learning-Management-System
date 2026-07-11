@@ -34,6 +34,8 @@ export type Permission =
   | 'teachers.documents'
   | 'attendance.mark'
   | 'attendance.view'
+  | 'attendance.teacher.mark'
+  | 'attendance.teacher.view'
   | 'exams.publish'
   | 'exams.enter'
   | 'exams.view'

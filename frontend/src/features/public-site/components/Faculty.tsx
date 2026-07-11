@@ -17,7 +17,7 @@ export function Faculty() {
             subtitle="Twenty-four teachers, grouped by subject, each carrying a manageable class load so no student goes unnoticed."
           />
           <Link
-            to="/public/faculty"
+            to="/faculty"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--brand-red)] hover:text-[var(--brand-red-dark)] transition-colors"
           >
             Meet the teachers <ArrowRight className="h-4 w-4" />

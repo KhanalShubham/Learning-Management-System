@@ -1,0 +1,113 @@
+<div class="certificate-container deukhuri-premium">
+  <!-- Watermark background -->
+  {{#if school.logoUrl}}
+    <div class="watermark-overlay" style="background-image: url('{{school.logoUrl}}');"></div>
+  {{/if}}
+
+  <!-- Luxury Corner Ornaments -->
+  <div class="corner-ornament top-left"></div>
+  <div class="corner-ornament top-right"></div>
+  <div class="corner-ornament bottom-left"></div>
+  <div class="corner-ornament bottom-right"></div>
+
+  <div class="border-outer">
+    <div class="border-inner">
+      
+      <!-- Institutional Header -->
+      <div class="header-section">
+        <div class="header-top-row">
+          <div class="logo-wrapper">
+            {{#if school.logoUrl}}
+              <img src="{{school.logoUrl}}" alt="School Logo" class="school-logo" />
+            {{else}}
+              <div class="logo-placeholder">🎓</div>
+            {{/if}}
+          </div>
+          
+          <div class="title-details">
+            <h1 class="school-name">DEUKHURI PUBLIC ENGLISH SECONDARY SCHOOL</h1>
+            <p class="school-address">Lamahi–6, Deupur, Dang | <span class="motto-italic">"Improve. Be Genial. Achieve."</span></p>
+            <p class="school-meta">Affiliated to NEB | School Code: 48012 | Phone: {{school.phone}} | Email: {{school.email}}</p>
+          </div>
+        </div>
+        <div class="premium-divider">
+          <span class="diamond-point"></span>
+        </div>
+      </div>
+
+      <!-- Title Badge -->
+      <div class="title-section">
+        <h2 class="certificate-title">CHARACTER CERTIFICATE</h2>
+        <div class="cert-serial">
+          Certificate ID: <strong class="serial-no">{{document.number}}</strong>
+        </div>
+      </div>
+
+      <!-- Body Section -->
+      <div class="body-section">
+        <p class="cert-text">
+          This is to certify that Mr./Miss <span class="highlight-val student-name"><strong>{{student.fullName}}</strong></span>, 
+          son/daughter of Mr./Mrs. <span class="highlight-val"><strong>{{student.guardianName}}</strong></span>, has successfully 
+          completed his/her secondary education at this institution. He/She has cleared Grade 
+          <span class="highlight-val"><strong>{{student.class}}</strong></span>, Section <span class="highlight-val"><strong>{{student.section}}</strong></span> 
+          with Admission Register Number <span class="highlight-val"><strong>{{student.admissionNumber}}</strong></span> in the academic 
+          session of <span class="highlight-val"><strong>{{academicYear.label}}</strong></span>.
+        </p>
+        <p class="cert-text">
+          Throughout his/her enrollment, his/her character and conduct have been rated as 
+          <span class="highlight-val character-conduct"><strong>{{custom.characterConduct}}</strong></span>. We wish him/her the 
+          highest level of achievements in all future professional and academic plans.
+        </p>
+      </div>
+
+      <!-- Structured Footer -->
+      <div class="footer-layout">
+        
+        <!-- Verification metadata -->
+        <div class="verify-block">
+          <div class="issue-date">Issue Date: <strong>{{date.current}}</strong></div>
+          <div class="verify-url">Verification URL: <strong>/verify/{{document.id}}</strong></div>
+          
+          <div class="qr-container-row">
+            <img src="{{document.qrCode}}" alt="Verify QR" class="verify-qr" />
+            <div class="qr-meta">
+              <span class="qr-title">SECURE CREDENTIAL</span>
+              <span class="qr-subtitle">Scan to authenticate ledger</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seal circle -->
+        <div class="official-seal">
+          {{#if school.stampUrl}}
+            <img src="{{school.stampUrl}}" alt="Official Stamp" class="school-stamp" />
+          {{else}}
+            <div class="seal-placeholder">OFFICIAL<br>CAMPUS SEAL</div>
+          {{/if}}
+        </div>
+
+        <!-- Signatures strip -->
+        <div class="signatures-strip">
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <span class="sig-title">Prepared By</span>
+          </div>
+          <div class="sig-block">
+            <div class="sig-line"></div>
+            <span class="sig-title">Class Teacher</span>
+          </div>
+          <div class="sig-block principal-block">
+            <div class="sig-line">
+              {{#if principal.signatureUrl}}
+                <img src="{{principal.signatureUrl}}" alt="Principal Signature" class="principal-sig" />
+              {{/if}}
+            </div>
+            <span class="sig-title">Principal</span>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

@@ -12,8 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] - v0.7.0 Faculty Management Engine
+## [0.7.0] - 2026-07-09
 ### Added
+- **Attendance Engine (Sprint 7.1, 7.2, 7.3)** (`backend/src/modules/attendance/` and `frontend/src/features/attendance/`) — Full backend rules, calendar logic, locks, horizontal registers compiling, and responsive frontend screens.
+  - **`Holiday` and `AttendanceLock` models** in schema. prisma supporting custom school calendar closures and automated session lockouts.
+  - **Nepal Calendar Restrictions**: blocks daily marking on weekends (Saturdays) or active holidays with custom error messages.
+  - **Roster Locks**: Gates daily edit writes under `403 Forbidden` if a roster is locked, permitting only users holding Admin/Super Admin bypass credentials to override edits.
+  - **Monthly Register Grid Matrix**: horizontal spreadsheet matrix mapping individual daily statuses (P, A, L, H, OL) dynamically over days 1–31 and compiling aggregate rates.
+  - **Dashboard Analytics**: computes attendance rates, marked lists checklists, recent absentees today, and calendar settings forms.
+  - **Authorized CSV Exports**: downloads registers spreadsheet documents with authorized Bearer Token integration.
 - **Faculty Management Engine** (`backend/src/modules/faculty/`) — Engine 6 in the build order, closing Milestone 6. Full design spec: [faculty-engine-design-spec.md](docs/architecture/faculty-engine-design-spec.md); ER diagram: [faculty-engine-er-diagram.md](docs/architecture/faculty-engine-er-diagram.md); API reference: [docs/api/faculty.md](docs/api/faculty.md).
   - **Department** and **Designation** reference data, same archive-only-retirement shape as the Academic Engine's `Subject`/`Class` (`RecordStatus`, hard-delete blocked while any `Teacher` references it).
   - **Teacher registration workflow** (`POST /faculty/teachers`, not bare CRUD) — generates a global `employeeId` (`{schoolProfile.shortName}-EMP-{seq}`, e.g. `DPS-EMP-0001`) via a new `EmployeeNumberSequence` singleton counter inside the same transaction as the Teacher/qualifications/emergency-contacts/documents/leave-balance create, the same collision-safe shape as Student admission numbers. Unlike admission numbers, this sequence is **global, not per-academic-year** — staff persist across years.
@@ -24,8 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Cross-engine touch on the Academic Engine**: additive, nullable `teacherId` on `ClassSubject` plus `POST /academic-structure/class-subjects/:id/assign-teacher` (validates the teacher exists and is `ACTIVE`). The one deliberate exception to "don't redesign shipped engines" — `ClassSubjectService` now composes `ITeacherRepository`, the same downstream-composes-upstream pattern as Student Admission validating Class/Section.
   - **Permissions**: `teachers.salary`, `teachers.leave`, `teachers.documents` added; `teachers.delete` renamed to `teachers.archive` to match the `academic.archive`/`students.archive` convention (see Breaking, below).
   - New `requireAnyPermission()` and `hasPermission()` helpers on the shared auth middleware — `hasPermission` lets a controller branch behavior (salary-field stripping) instead of hard-rejecting; `requireAnyPermission` gates the status endpoint where the exact required permission depends on the request body.
+- **Faculty Management Engine frontend** (`frontend/src/features/faculty/`) — Teacher Directory Dashboard (stat tiles, recently-joined list, quick actions), Teachers registry (search/filter by department/designation/status/employment-type, pagination, CSV export), Teacher Registration form (employment, identity, address, permission-gated salary field, qualifications, emergency contacts, documents), Teacher Detail page (Profile edit, Qualifications, Emergency Contacts, Documents, Leave Balance tabs, status lifecycle, archive/delete), and Department/Designation reference-data admin pages. Routed under `/teachers`, `/teachers/list`, `/teachers/new`, `/teachers/:id`, `/teachers/departments`, `/teachers/designations`, replacing the placeholder mock table that previously lived at `/teachers`.
 ### Fixed
 - `frontend/src/features/auth/types/index.ts`'s `Permission` union still had the old `teachers.delete` and was missing `teachers.salary`/`teachers.leave`/`teachers.documents` — synced to match the backend seed.
+- **Gap analysis before closing this milestone** surfaced and fixed:
+  - `teacher.service.ts`'s `deleteQualification`/`deleteDocument` deleted by ID with no ownership check, so a wrong-teacher or nonexistent ID fell through to an unhandled Prisma `P2025` and leaked as a generic 500 instead of a clean 404 — now verified against `teacherId` first, matching the existing `deleteEmergencyContact` pattern.
+  - Department/Designation CRUD and leave-balance adjustments wrote no audit log, despite the design spec's Definition of Done requiring one on every mutating endpoint. Added `DEPARTMENT_CREATED/UPDATED/ARCHIVED/DELETED`, `DESIGNATION_CREATED/UPDATED/ARCHIVED/DELETED`, and `TEACHER_LEAVE_BALANCE_ADJUSTED` to `AuditAction` and wired `writeAuditLog` calls into both controllers.
+  - `TeacherDetail`'s status dropdown listed all six statuses to any `teachers.update`-or-`teachers.archive` holder; a `teachers.update`-only user selecting a terminal status got a raw backend 403. The dropdown now only offers terminal options (and only stays enabled on an already-terminal record) to callers holding `teachers.archive`.
+  - `Departments`/`Designations` pages rendered Add/Edit/Archive/Delete controls to every signed-in user reaching the page (gated only by `teachers.read`), instead of the `teachers.create`/`update`/`archive` split documented in `docs/api/faculty.md`. Added the missing permission checks and `aria-label`s on the icon-only action buttons.
+- **Repository-wide `tsc -b` build failure** — `z.coerce.number().optional()` fields inside a Zod schema infer as `unknown` on the *input* side (zod v4's coercion contract), which broke structural assignability against `@hookform/resolvers` v5's `Resolver` type whenever a form's `useForm<Fields>()` generic used the schema's *output* type (`z.infer`/`z.output`) instead of its *input* type. This surfaced across every form using `z.coerce`, not just Faculty's — `StudentAdmission.tsx`, `ClassesAndSections.tsx`, `ClassSubjects.tsx`, and `SchoolProfile.tsx` were already broken on `develop` before this milestone. One architectural fix applied everywhere: `useForm<z.input<typeof schema>, unknown, z.output<typeof schema>>(...)` — RHF's third generic (added in v7.55, `TTransformedValues`) carries the post-coercion type through to `handleSubmit`'s callback, while the first generic keeps `register`/`watch`/`errors` aligned with what's actually typed into the inputs.
+- `pages/Dashboard.tsx` indexed its showcase stats object with `useEffectiveRole()`'s `'super_admin' | 'admin'` return type, but the object only had an `admin` key — a real (unrelated) type error, fixed by aliasing `super_admin` to the same stats as `admin`.
 
 ### Breaking
 - **`teachers.delete` no longer exists** — renamed to `teachers.archive`. Since `prisma/seed.ts` fully flushes and re-seeds `Permission`/`Role`/`RolePermission` on every run, this is a no-op for any environment that re-seeds; it only matters if you were hand-editing `RolePermission` rows against the old code outside the seed script.
@@ -33,19 +48,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Release Statistics
 | Area | Count |
 | :--- | :--- |
-| New Prisma models | 8 (`Department`, `Designation`, `Teacher`, `TeacherQualification`, `TeacherEmergencyContact`, `TeacherDocument`, `TeacherLeaveBalance`, `EmployeeNumberSequence`) |
+| New Prisma models | 12 (`Department`, `Designation`, `Teacher`, `TeacherQualification`, `TeacherEmergencyContact`, `TeacherDocument`, `TeacherLeaveBalance`, `EmployeeNumberSequence`, `StudentAttendance`, `TeacherAttendance`, `Holiday`, `AttendanceLock`) |
 | New Prisma enums | 3 (`EmploymentType`, `TeacherStatus`, `TeacherDocumentType`) |
-| New `AuditAction` values | 4 |
+| New `AuditAction` values | 20 (13 faculty-lifecycle + 7 attendance locks/markings) |
 | Additive fields on existing models | 1 (`ClassSubject.teacherId`) |
-| New backend module files | 13 |
-| New API endpoints | 31 (30 under `/faculty`, 1 under `/academic-structure`) |
-| New/changed permissions | 4 (`teachers.salary`, `teachers.leave`, `teachers.documents` added; `teachers.delete` → `teachers.archive`) |
+| New API endpoints | 45 (31 faculty + 14 attendance) |
+| New permissions | 6 (`teachers.salary`, `teachers.leave`, `teachers.documents`, `attendance.mark`, `attendance.view`, `attendance.teacher.mark`, `attendance.teacher.view`) |
 | New docs | 3 (`faculty-engine-design-spec.md`, `faculty-engine-er-diagram.md`, `docs/api/faculty.md`) |
 
 ### Migration
 ```bash
 cd backend
-npx prisma migrate dev   # applies the faculty_management_engine migration
+npx prisma migrate dev   # applies faculty_management_engine + faculty_engine_audit_actions
 npx prisma db seed       # re-seeds permissions with the archive rename + 3 new codes
 ```
 

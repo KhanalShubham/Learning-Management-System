@@ -1,0 +1,100 @@
+<div class="certificate-container deukhuri-gov">
+  <!-- Watermark background -->
+  {{#if school.logoUrl}}
+    <div class="watermark-overlay" style="background-image: url('{{school.logoUrl}}');"></div>
+  {{/if}}
+
+  <div class="border-outer">
+    <div class="border-inner">
+      
+      <!-- Institutional Header (Government/Official style) -->
+      <div class="header-section">
+        <div class="logo-wrapper">
+          {{#if school.logoUrl}}
+            <img src="{{school.logoUrl}}" alt="School Logo" class="school-logo" />
+          {{else}}
+            <div class="logo-placeholder">🏛️</div>
+          {{/if}}
+        </div>
+        <h1 class="school-name">DEUKHURI PUBLIC ENGLISH SECONDARY SCHOOL</h1>
+        <p class="school-sub">Lamahi–6, Deupur, Dang, Nepal</p>
+        <p class="school-motto">"Improve. Be Genial. Achieve."</p>
+        <p class="school-contact">Phone: {{school.phone}} | Email: {{school.email}} | Website: www.deukhuri.edu.np</p>
+        <div class="gov-double-divider"></div>
+      </div>
+
+      <!-- Title inside double lines -->
+      <div class="title-section">
+        <div class="title-frame">
+          <h2 class="certificate-title">CHARACTER CERTIFICATE</h2>
+        </div>
+        <div class="meta-row">
+          <span class="cert-serial">Certificate No: <strong class="serial-no">{{document.number}}</strong></span>
+          <span class="cert-date">Date: <strong>{{date.current}}</strong></span>
+        </div>
+      </div>
+
+      <!-- Flowing Body Paragraph -->
+      <div class="body-section">
+        <p class="cert-text">
+          This is to certify that Mr./Miss <span class="highlight-val student-name"><strong>{{student.fullName}}</strong></span>, 
+          son/daughter of Mr./Mrs. <span class="highlight-val"><strong>{{student.guardianName}}</strong></span>, was enrolled as a 
+          regular student of <strong>Deukhuri Public English Secondary School</strong> under Admission Register Number 
+          <span class="highlight-val"><strong>{{student.admissionNumber}}</strong></span>. He/She has successfully completed 
+          his/her academic curriculum in Class <span class="highlight-val"><strong>{{student.class}}</strong></span>, Section 
+          <span class="highlight-val"><strong>{{student.section}}</strong></span> in the academic session of 
+          <span class="highlight-val"><strong>{{academicYear.label}}</strong></span>.
+        </p>
+        <p class="cert-text">
+          According to our official school registers, his/her character and conduct during his/her stay in this institution 
+          were found to be <span class="highlight-val character-conduct"><strong>{{custom.characterConduct}}</strong></span>. 
+          We wish him/her all the best for his/her future studies and career path.
+        </p>
+      </div>
+
+      <!-- Structured signatures block -->
+      <div class="signatures-footer">
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <span class="sig-title">Prepared By</span>
+        </div>
+        <div class="sig-block">
+          <div class="sig-line"></div>
+          <span class="sig-title">Class Teacher</span>
+        </div>
+        <div class="sig-block principal-block">
+          <div class="sig-line">
+            {{#if principal.signatureUrl}}
+              <img src="{{principal.signatureUrl}}" alt="Principal Signature" class="principal-sig" />
+            {{/if}}
+          </div>
+          <span class="sig-title">Principal</span>
+        </div>
+      </div>
+
+      <!-- Official Seal & QR Verification -->
+      <div class="verification-footer">
+        <div class="verification-left">
+          <div class="verify-seal-wrap">
+            {{#if school.stampUrl}}
+              <img src="{{school.stampUrl}}" alt="Official Seal" class="school-stamp" />
+            {{else}}
+              <div class="seal-placeholder">OFFICIAL SEAL</div>
+            {{/if}}
+          </div>
+        </div>
+
+        <div class="verification-right">
+          <div class="qr-wrap">
+            <img src="{{document.qrCode}}" alt="Verify QR" class="verify-qr" />
+            <div class="qr-meta">
+              <span class="qr-label">ONLINE VERIFICATION</span>
+              <span class="qr-url">/verify/{{document.id}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

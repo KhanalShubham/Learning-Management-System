@@ -183,6 +183,7 @@ function BrandingTab() {
   const uploadSignature = useUploadBrandingImage('signature');
   const uploadReportHeader = useUploadBrandingImage('reportHeader');
   const uploadReportFooter = useUploadBrandingImage('reportFooter');
+  const uploadCover = useUploadBrandingImage('cover');
   const hasHydrated = useRef(false);
 
   const {
@@ -278,6 +279,11 @@ function BrandingTab() {
             label="Report Footer"
             value={branding?.reportFooterImageUrl}
             onUpload={handleImageUpload(uploadReportFooter, 'Report Footer Updated')}
+          />
+          <ImageUpload
+            label="Cover Image"
+            value={branding?.coverImageUrl}
+            onUpload={handleImageUpload(uploadCover, 'Cover Image Updated')}
           />
         </div>
 
@@ -472,7 +478,8 @@ const settingsSchema = z.object({
   attendanceMethod: z.enum(['ADMIN_ONLY', 'TEACHER', 'BIOMETRIC']),
 });
 
-type SettingsFields = z.infer<typeof settingsSchema>;
+type SettingsFormInput = z.input<typeof settingsSchema>;
+type SettingsFields = z.output<typeof settingsSchema>;
 
 function SettingsTab() {
   const { toast } = useToast();
@@ -485,7 +492,7 @@ function SettingsTab() {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<SettingsFields>({ resolver: zodResolver(settingsSchema) });
+  } = useForm<SettingsFormInput, unknown, SettingsFields>({ resolver: zodResolver(settingsSchema) });
 
   useEffect(() => {
     if (settings && !hasHydrated.current) {

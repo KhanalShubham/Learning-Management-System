@@ -9,7 +9,9 @@ export interface BreadcrumbProps {
 
 export const Breadcrumb = ({ customLabels = {}, className }: BreadcrumbProps) => {
   const location = useLocation();
-  const pathnames = location.pathname.split('/').filter((x) => x);
+  // The dashboard shell lives under /dashboard — that segment is represented
+  // by the "Home" crumb below, not repeated as its own crumb.
+  const pathnames = location.pathname.split('/').filter((x) => x && x !== 'dashboard');
 
   const defaultLabels: Record<string, string> = {
     students: 'Students Directory',
@@ -21,7 +23,7 @@ export const Breadcrumb = ({ customLabels = {}, className }: BreadcrumbProps) =>
   return (
     <nav className={cn('flex items-center space-x-1.5 text-xs text-muted-foreground font-medium', className)} aria-label="Breadcrumb">
       <Link
-        to="/"
+        to="/dashboard"
         className="flex items-center gap-1 hover:text-foreground transition-colors py-1 px-1.5 rounded hover:bg-secondary/60"
       >
         <Home className="h-3.5 w-3.5" />
@@ -29,7 +31,7 @@ export const Breadcrumb = ({ customLabels = {}, className }: BreadcrumbProps) =>
       </Link>
 
       {pathnames.map((value, index) => {
-        const to = `/${pathnames.slice(0, index + 1).join('/')}`;
+        const to = `/dashboard/${pathnames.slice(0, index + 1).join('/')}`;
         const isLast = index === pathnames.length - 1;
         const rawLabel = defaultLabels[value] || value;
         // Capitalize raw values

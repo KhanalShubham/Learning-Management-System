@@ -34,12 +34,12 @@ export function Footer() {
               </li>
             ))}
             <li>
-              <Link to="/public/fees" className="text-sm text-white/70 hover:text-white transition-colors">
+              <Link to="/fees" className="text-sm text-white/70 hover:text-white transition-colors">
                 Fee Structure
               </Link>
             </li>
             <li>
-              <a href="/public#campus-life" className="text-sm text-white/70 hover:text-white transition-colors">
+              <a href="#campus-life" className="text-sm text-white/70 hover:text-white transition-colors">
                 Campus Life
               </a>
             </li>

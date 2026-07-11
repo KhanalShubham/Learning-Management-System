@@ -12,7 +12,7 @@ export const FacultyDirectory = () => {
         eyebrow="Our Faculty"
         title="The teachers behind every classroom"
         description="Twenty-four teachers across four departments. Here are a few of the people your child will learn from."
-        crumbs={[{ label: 'Home', to: '/public' }, { label: 'Faculty' }]}
+        crumbs={[{ label: 'Home', to: '/' }, { label: 'Faculty' }]}
       />
 
       <section className="py-16 sm:py-20">
@@ -20,7 +20,7 @@ export const FacultyDirectory = () => {
           {teachers.map((teacher, i) => (
             <SectionReveal key={teacher.slug} delay={i * 0.05}>
               <Link
-                to={`/public/faculty/${teacher.slug}`}
+                to={`/faculty/${teacher.slug}`}
                 className="group block h-full rounded-[var(--radius-card)] border border-[var(--brand-border)] bg-[var(--brand-white)] p-6 hover:border-[var(--brand-red)] transition-colors"
               >
                 <div className="h-16 w-16 rounded-full bg-[var(--brand-surface)] flex items-center justify-center overflow-hidden">

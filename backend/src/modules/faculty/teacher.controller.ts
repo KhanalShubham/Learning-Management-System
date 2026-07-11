@@ -49,6 +49,8 @@ export class TeacherController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'TEACHER_REGISTERED',
+        entityType: 'teacher',
+        entityId: teacher.id,
         details: `Registered teacher ${teacher.id} (${teacher.employeeId})`,
       });
       return successResponse(res, 'Teacher registered successfully.', { teacher }, 201);
@@ -97,6 +99,8 @@ export class TeacherController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'TEACHER_UPDATED',
+        entityType: 'teacher',
+        entityId: id,
         details: `Updated teacher ${id}`,
       });
       return successResponse(res, 'Teacher updated successfully.', { teacher });
@@ -114,6 +118,8 @@ export class TeacherController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'TEACHER_STATUS_CHANGED',
+        entityType: 'teacher',
+        entityId: id,
         details: `Teacher ${id} status changed to ${status}`,
       });
       return successResponse(res, 'Teacher status updated successfully.', { teacher });
@@ -129,6 +135,8 @@ export class TeacherController {
       await writeAuditLog({
         ...auditContext(req),
         action: 'TEACHER_ARCHIVED',
+        entityType: 'teacher',
+        entityId: id,
         details: `Deleted teacher ${id} (${teacher.employeeId})`,
       });
       return successResponse(res, 'Teacher deleted successfully.', { teacher });
@@ -226,6 +234,13 @@ export class TeacherController {
       const { id } = teacherIdParamSchema.parse(req.params);
       const validated = adjustLeaveBalanceSchema.parse(req.body);
       const leaveBalance = await teacherService.adjustLeaveBalance(id, validated);
+      await writeAuditLog({
+        ...auditContext(req),
+        action: 'TEACHER_LEAVE_BALANCE_ADJUSTED',
+        entityType: 'teacher',
+        entityId: id,
+        details: `Adjusted leave balance for teacher ${id}`,
+      });
       return successResponse(res, 'Leave balance updated successfully.', { leaveBalance });
     } catch (error) {
       next(error);

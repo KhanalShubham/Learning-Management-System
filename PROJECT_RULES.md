@@ -148,8 +148,64 @@ Format: `<type>(<scope>): <description>`
 ## 🏁 8. Definition of Done (DoD)
 
 A task is considered complete and ready for PR merge only if:
-1. **Compilation**: Code compiles with zero TypeScript compilation warnings or errors.
-2. **Linting & Formatting**: Code passes lint checks (`npm run lint`) and is formatted via Prettier.
-3. **API Contracts**: REST API routes conform to the Standard API Response layout.
-4. **Environment templates**: `.env.example` templates are updated with any new properties.
-5. **Documentation**: Necessary subfolder `README.md` files are updated with new details.
+- **Build Passes**: Application builds successfully without errors.
+- **Lint & TypeScript**: Code passes formatting rules (`npm run lint`) and TypeScript checks with zero errors/warnings.
+- **API Contracts**: API routes strictly conform to the Standard API Response layout.
+- **Unit & Integration Tests**: New services, repositories, and critical workflows have test coverage.
+- **Smoke Testing**: The developer has manually verified positive and negative paths in the UI and API.
+- **Permissions Verified**: Explicit RBAC mappings and routes restrictions are enforced and verified.
+- **Audit Logging**: Any state mutation triggers a descriptive record in the database audit log.
+- **Responsive Layout**: Frontend designs are validated across desktop and mobile screens.
+- **Accessibility Checks**: HTML forms and pages use semantic tags, label associations, and `aria-label` tags.
+- **Database Migrations**: DB schema adjustments are isolated in migrations files and tested locally.
+- **Documentation**: Inline docstrings are maintained, the module-level README is updated, and the project CHANGELOG is updated.
+
+---
+
+## 📐 9. Engineering Principles
+
+Every contributor must adhere to these core architectural guidelines:
+1. **Simplicity over Cleverness**: Choose clean, readable, and maintainable code over complex or implicit patterns.
+2. **Reuse Before Creating**: Check for existing helper functions and shared services before coding new infrastructure.
+3. **Services Own Business Logic**: All validation, computations, and logic flows happen inside Services. Controllers must remain thin.
+4. **Controllers Remain Thin**: Route controllers should solely parse requests, delegate to Services, and format response payloads.
+5. **Single Responsibility Principle (SRP)**: Each class, service, helper file, and component should handle exactly one specific task.
+6. **No Hidden Side Effects**: Functions must perform only their stated tasks. Avoid side effect modifications inside utility helpers.
+7. **Every Mutation is Auditable**: Every API request mutating system state must write to the `AuditLog` model.
+8. **Self-Contained Features**: Keep related types, hooks, services, and components grouped together within their feature directories.
+9. **Cross-Engine Communication**: Cross-module operations happen only via imports of the target module's repository or service interfaces. Direct database manipulations across tables owned by other engines are prohibited.
+10. **Backward Compatibility**: Plan schema modifications carefully. Use default fields or nullable fields to ensure old data does not break.
+
+---
+
+## 🧰 10. Platform-Level Shared Services
+
+The system provides a dedicated shared services layer located under `backend/src/utils/`, `backend/src/middleware/`, or specific global helper files. **Always consume these shared components instead of rebuilding them within feature engines:**
+* **Audit Logging** (`backend/src/utils/audit-log.ts`): Use this utility to record actions to the database audit trail.
+* **File Upload & Storage** (`backend/src/middleware/upload.middleware.ts`): Built-in Multer and Cloudinary adapters for managing image and PDF uploads.
+* **Mail Dispatcher** (`backend/src/config/mailer.ts`): Configuration and dispatch helpers for outbound emails.
+* **Sequence Counter Engine**: Singleton sequence counter generation tools (e.g. Employee and Student reference generators).
+* **Response Formatting**: Standard wrappers in middleware to ensure uniform API data structures.
+
+---
+
+## 🔒 11. Security Checklist (Per Engine)
+
+When adding or refactoring an engine, verify these security aspects:
+- [ ] **Authentication**: Access is gated behind valid JWT tokens unless the route is explicitly public.
+- [ ] **Authorization**: Route limits and handler steps verify permissions (`hasPermission` / `requireAnyPermission`).
+- [ ] **Input Validation**: Request bodies, queries, and param variables are validated using strict Zod schemas.
+- [ ] **Rate Limiting**: Critical endpoints (e.g., login, password resets) employ rate-limiting constraints.
+- [ ] **File Validation**: Upload controls inspect mime-types, file sizes, and enforce standard limits.
+- [ ] **Audit Logs**: Every write operation creates a persistent audit entry with caller info.
+- [ ] **Error Handling**: System exceptions are caught and generalized; sensitive stack traces do not leak to HTTP clients.
+- [ ] **Fields Masking**: Sensitive database columns (e.g. passwords, salary data) are omitted or stripped from reads unless the caller holds explicit permissions.
+
+---
+
+## 🌐 12. Public API Policy
+
+The ERP features a public marketing site side-by-side with administrative engines.
+* **Standard Rule**: Public APIs (e.g., `/api/v1/public/...`) must **never** expose internal administrative details.
+* **Forbidden Fields**: Under no circumstances should salaries, contact details (phone, email), emergency contacts, personal documents, audit logs, or internal database IDs be exposed on anonymous routes.
+* **Public Profile Data**: Only explicitly approved public-facing attributes (e.g., official teacher bio, class structure curriculum, public notice title/slug) may be serialized.

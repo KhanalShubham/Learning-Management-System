@@ -13,7 +13,7 @@ export function Academics() {
         <div className="flex flex-wrap items-end justify-between gap-6">
           <SectionHeading eyebrow="Academics" title="Four levels, one continuous journey" />
           <Link
-            to="/public/academics"
+            to="/academics"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--brand-red)] hover:text-[var(--brand-red-dark)] transition-colors"
           >
             Explore the curriculum <ArrowRight className="h-4 w-4" />
@@ -24,7 +24,7 @@ export function Academics() {
           {gradeLevels.map((grade, i) => (
             <SectionReveal key={grade.slug} delay={i * 0.06}>
               <Link
-                to={`/public/academics/${grade.slug}`}
+                to={`/academics/${grade.slug}`}
                 className="block rounded-[var(--radius-card)] border border-[var(--brand-border)] px-6 py-5 min-w-[180px] hover:border-[var(--brand-red)] transition-colors"
               >
                 <Badge tone={grade.tone}>{grade.range}</Badge>

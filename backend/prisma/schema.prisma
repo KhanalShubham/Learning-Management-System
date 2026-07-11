@@ -32,6 +32,37 @@ enum AuditAction {
   TEACHER_UPDATED
   TEACHER_STATUS_CHANGED
   TEACHER_ARCHIVED
+  TEACHER_LEAVE_BALANCE_ADJUSTED
+  DEPARTMENT_CREATED
+  DEPARTMENT_UPDATED
+  DEPARTMENT_ARCHIVED
+  DEPARTMENT_DELETED
+  DESIGNATION_CREATED
+  DESIGNATION_UPDATED
+  DESIGNATION_ARCHIVED
+  DESIGNATION_DELETED
+  NOTICE_CREATED
+  NOTICE_UPDATED
+  NOTICE_ARCHIVED
+  NOTICE_DELETED
+  GALLERY_IMAGE_ADDED
+  GALLERY_IMAGE_REMOVED
+  STUDENT_ATTENDANCE_MARKED
+  STUDENT_ATTENDANCE_UPDATED
+  TEACHER_ATTENDANCE_MARKED
+  TEACHER_ATTENDANCE_UPDATED
+  EXAM_TERM_CREATED
+  EXAM_TERM_UPDATED
+  EXAM_TERM_PUBLISHED
+  EXAM_SCHEDULED
+  EXAM_MARKS_ENTERED
+  EXAM_MARKS_UPDATED
+  TEMPLATE_CREATED
+  TEMPLATE_UPDATED
+  TEMPLATE_VERSION_RESTORED
+  DOCUMENT_GENERATED
+  DOCUMENT_PRINTED
+  DOCUMENT_DOWNLOADED
 }
 
 // User account identity entity mapping
@@ -46,9 +77,14 @@ model User {
   lastLogin     DateTime?
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
-  resetTokens   PasswordResetToken[]
+  refreshTokens     RefreshToken[]
+  auditLogs         AuditLog[]
+  resetTokens       PasswordResetToken[]
+  studentAttendance StudentAttendance[]
+  teacherAttendance TeacherAttendance[]
+  attendanceLocks   AttendanceLock[]    @relation("LockIssuer")
+  examMarks         ExamMark[]
+  generatedDocuments GeneratedDocument[]
 
   @@map("users")
 }
@@ -156,6 +192,7 @@ model SchoolBranding {
   reportFooterImageUrl  String?
   primaryColor          String?
   secondaryColor        String?
+  coverImageUrl         String?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 
@@ -252,6 +289,9 @@ model AcademicYear {
   examTypes               ExamType[]
   enrollments             Enrollment[]
   admissionNumberSequence AdmissionNumberSequence?
+  studentAttendance       StudentAttendance[]
+  examTerms               ExamTerm[]
+  transcripts             ExamTranscript[]
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
 
@@ -266,18 +306,19 @@ enum RecordStatus {
 
 // School grade/class catalog entry scoped to a single academic year
 model Class {
-  id             String         @id @default(uuid())
-  academicYearId String
-  academicYear   AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
-  name           String
-  displayOrder   Int
-  description    String?
-  status         RecordStatus   @default(ACTIVE)
-  sections       Section[]
-  classSubjects  ClassSubject[]
-  enrollments    Enrollment[]
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  id                String         @id @default(uuid())
+  academicYearId    String
+  academicYear      AcademicYear   @relation(fields: [academicYearId], references: [id], onDelete: Cascade)
+  name              String
+  displayOrder      Int
+  description       String?
+  status            RecordStatus   @default(ACTIVE)
+  sections          Section[]
+  classSubjects     ClassSubject[]
+  enrollments       Enrollment[]
+  studentAttendance StudentAttendance[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
   @@unique([academicYearId, name])
   @@map("classes")
@@ -292,9 +333,10 @@ model Section {
   capacity    Int?
   roomNumber  String?
   status      RecordStatus @default(ACTIVE)
-  enrollments Enrollment[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  enrollments       Enrollment[]
+  studentAttendance StudentAttendance[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 
   @@unique([classId, name])
   @@map("sections")
@@ -308,9 +350,11 @@ model Subject {
   description   String?
   isOptional    Boolean        @default(false)
   status        RecordStatus   @default(ACTIVE)
-  classSubjects ClassSubject[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  classSubjects       ClassSubject[]
+  reportCardDetails   ExamReportCardDetail[]
+  transcriptDetails   ExamTranscriptDetail[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
 
   @@map("subjects")
 }
@@ -334,6 +378,7 @@ model ClassSubject {
   // ClassSubject has an assigned teacher yet, so this stays optional.
   teacherId          String?
   teacher            Teacher? @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  exams              Exam[]
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -443,6 +488,11 @@ model Student {
   guardians     StudentGuardian[]
   documents     StudentDocument[]
   enrollments   Enrollment[]
+  attendance    StudentAttendance[]
+  examMarks     ExamMark[]
+  examReportCards ExamReportCard[]
+  transcripts   ExamTranscript[]
+  generatedDocuments GeneratedDocument[]
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 
@@ -514,16 +564,22 @@ model AdmissionNumberSequence {
 
 // Security compliance audit logging record mapping
 model AuditLog {
-  id        String      @id @default(uuid())
-  userId    String?
-  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  email     String?
-  action    AuditAction
-  ipAddress String?
-  userAgent String?
-  details   String?
-  createdAt DateTime    @default(now())
+  id         String      @id @default(uuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email      String?
+  action     AuditAction
+  // Generic entity pointer (e.g. "teacher"/<teacherId>) so any engine's
+  // detail page can query its own timeline without a per-module audit
+  // endpoint. Nullable — auth events (login/logout) have no single entity.
+  entityType String?
+  entityId   String?
+  ipAddress  String?
+  userAgent  String?
+  details    String?
+  createdAt  DateTime    @default(now())
 
+  @@index([entityType, entityId])
   @@map("audit_logs")
 }
 
@@ -640,6 +696,8 @@ model Teacher {
   documents         TeacherDocument[]
   leaveBalance      TeacherLeaveBalance?
   classSubjects     ClassSubject[]
+  attendance        TeacherAttendance[]
+  generatedDocuments GeneratedDocument[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -714,3 +772,376 @@ model EmployeeNumberSequence {
 
   @@map("employee_number_sequences")
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// Notice CMS — public-site notices, admin-authored. Reuses RecordStatus for
+// archive-only retirement (same convention as reference data elsewhere) and
+// the existing cms.edit/cms.publish permissions rather than new ones.
+// ─────────────────────────────────────────────────────────────────────────
+
+enum NoticeTag {
+  ADMISSIONS
+  EXAMINATION
+  EVENT
+  NOTICE
+}
+
+model Notice {
+  id            String       @id @default(uuid())
+  title         String
+  slug          String       @unique
+  tag           NoticeTag    @default(NOTICE)
+  excerpt       String
+  body          String[]
+  attachmentUrl String?
+  isPinned      Boolean      @default(false)
+  status        RecordStatus @default(ACTIVE)
+  publishedAt   DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("notices")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Gallery CMS — public-site campus-life photo grid. Same cms.edit/cms.publish
+// permissions as Notice; displayOrder drives manual sort in the admin UI.
+// ─────────────────────────────────────────────────────────────────────────
+
+model GalleryImage {
+  id           String       @id @default(uuid())
+  imageUrl     String
+  caption      String?
+  displayOrder Int          @default(0)
+  status       RecordStatus @default(ACTIVE)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@map("gallery_images")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Attendance Engine models and status enums
+// ─────────────────────────────────────────────────────────────────────────
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+}
+
+enum TeacherAttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  ON_LEAVE
+}
+
+model StudentAttendance {
+  id             String           @id @default(uuid())
+  studentId      String
+  student        Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  academicYearId String
+  academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id])
+  classId        String
+  class          Class            @relation(fields: [classId], references: [id])
+  sectionId      String
+  section        Section          @relation(fields: [sectionId], references: [id])
+  date           DateTime
+  status         AttendanceStatus
+  remarks        String?
+  markedById     String
+  markedBy       User             @relation(fields: [markedById], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([studentId, date])
+  @@map("student_attendance")
+}
+
+model TeacherAttendance {
+  id          String                  @id @default(uuid())
+  teacherId   String
+  teacher     Teacher                 @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  date        DateTime
+  status      TeacherAttendanceStatus
+  remarks     String?
+  markedById  String
+  markedBy    User                    @relation(fields: [markedById], references: [id])
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@unique([teacherId, date])
+  @@map("teacher_attendance")
+}
+
+model Holiday {
+  id        String   @id @default(uuid())
+  name      String
+  startDate DateTime // Store as midnight UTC
+  endDate   DateTime // Store as midnight UTC
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("holidays")
+}
+
+model AttendanceLock {
+  id         String   @id @default(uuid())
+  date       DateTime // Midnight UTC
+  sectionId  String?  // null represents teacher attendance lock
+  isLocked   Boolean  @default(true)
+  lockedById String
+  lockedBy   User     @relation("LockIssuer", fields: [lockedById], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([date, sectionId])
+  @@map("attendance_locks")
+}
+
+enum ExamStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum MarksEntryStatus {
+  PRESENT
+  ABSENT
+  DISQUALIFIED
+}
+
+enum ExamResultStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum ResultStatus {
+  PASS
+  FAIL
+  WITHHELD
+  ABSENT
+  INCOMPLETE
+}
+
+model ExamTerm {
+  id             String           @id @default(uuid())
+  name           String
+  academicYearId String
+  academicYear   AcademicYear     @relation(fields: [academicYearId], references: [id])
+  startDate      DateTime
+  endDate        DateTime
+  weightage      Float            @default(1.0)
+  status         ExamResultStatus @default(DRAFT)
+  exams          Exam[]
+  reportCards    ExamReportCard[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([academicYearId, name])
+  @@map("exam_terms")
+}
+
+model Exam {
+  id                 String           @id @default(uuid())
+  examTermId         String
+  examTerm           ExamTerm         @relation(fields: [examTermId], references: [id], onDelete: Cascade)
+  classSubjectId     String
+  classSubject       ClassSubject     @relation(fields: [classSubjectId], references: [id], onDelete: Cascade)
+  examDate           DateTime
+  startTime          String
+  endTime            String
+  roomNumber         String?
+  theoryMaxMarks     Float
+  theoryPassMarks    Float
+  practicalMaxMarks  Float            @default(0)
+  practicalPassMarks Float            @default(0)
+  status             ExamStatus       @default(SCHEDULED)
+  marks              ExamMark[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@unique([examTermId, classSubjectId])
+  @@map("exams")
+}
+
+model ExamMark {
+  id                String           @id @default(uuid())
+  examId            String
+  exam              Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId         String
+  student           Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status            MarksEntryStatus @default(PRESENT)
+  theoryObtained    Float?
+  practicalObtained Float?
+  remarks           String?
+  enteredById       String
+  enteredBy         User             @relation(fields: [enteredById], references: [id])
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([examId, studentId])
+  @@map("exam_marks")
+}
+
+model ExamReportCard {
+  id                 String                 @id @default(uuid())
+  examTermId         String
+  examTerm           ExamTerm               @relation(fields: [examTermId], references: [id], onDelete: Cascade)
+  studentId          String
+  student            Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  totalMaxMarks      Float
+  totalMarksObtained Float
+  percentage         Float
+  gpa                Float
+  resultStatus       ResultStatus           @default(PASS)
+  division           String?
+  classRank          Int?
+  sectionRank        Int?
+  attendanceRate     Float?
+  remarks            String?
+  version            Int                    @default(1)
+  publishedAt        DateTime?
+  details            ExamReportCardDetail[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@unique([examTermId, studentId])
+  @@map("exam_report_cards")
+}
+
+model ExamReportCardDetail {
+  id                String         @id @default(uuid())
+  reportCardId      String
+  reportCard        ExamReportCard @relation(fields: [reportCardId], references: [id], onDelete: Cascade)
+  subjectId         String
+  subject           Subject        @relation(fields: [subjectId], references: [id])
+  theoryObtained    Float?
+  practicalObtained Float?
+  totalObtained     Float
+  percentage        Float
+  gradePoint        Float
+  letterGrade       String
+  status            ResultStatus   @default(PASS)
+  subjectRank       Int?
+  remarks           String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([reportCardId, subjectId])
+  @@map("exam_report_card_details")
+}
+
+model ExamTranscript {
+  id                 String                 @id @default(uuid())
+  academicYearId     String
+  academicYear       AcademicYear           @relation(fields: [academicYearId], references: [id])
+  studentId          String
+  student            Student                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  gpa                Float
+  percentage         Float
+  resultStatus       ResultStatus           @default(PASS)
+  classRank          Int?
+  sectionRank        Int?
+  remarks            String?
+  details            ExamTranscriptDetail[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@unique([academicYearId, studentId])
+  @@map("exam_transcripts")
+}
+
+model ExamTranscriptDetail {
+  id           String         @id @default(uuid())
+  transcriptId String
+  transcript   ExamTranscript @relation(fields: [transcriptId], references: [id], onDelete: Cascade)
+  subjectId    String
+  subject      Subject        @relation(fields: [subjectId], references: [id])
+  gpa          Float
+  letterGrade  String
+  status       ResultStatus   @default(PASS)
+  remarks      String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([transcriptId, subjectId])
+  @@map("exam_transcript_details")
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Document & Certificate Engine models
+// ─────────────────────────────────────────────────────────────────────────
+
+model DocumentTemplate {
+  id           String                     @id @default(uuid())
+  name         String
+  slug         String                     @unique
+  category     String                     // e.g. "ACADEMIC", "EXAMINATION", "IDENTITY", "FINANCE", "EMPLOYMENT"
+  type         String                     // e.g. "CHARACTER_CERTIFICATE", "BONAFIDE_CERTIFICATE", "ADMIT_CARD"
+  description  String?
+  htmlTemplate String                     @db.Text
+  cssTemplate  String                     @db.Text
+  pageSize     String                     @default("A4") // "A4", "LETTER", "LEGAL", "CUSTOM"
+  orientation  String                     @default("PORTRAIT") // "PORTRAIT", "LANDSCAPE"
+  isDefault    Boolean                    @default(false)
+  status       RecordStatus               @default(ACTIVE)
+  variables    Json                       // Array of variables: [{ name: string, label: string, type: string, required: boolean, defaultValue: string }]
+  version      Int                        @default(1)
+  createdBy    String?
+  updatedBy    String?
+  createdAt    DateTime                   @default(now())
+  updatedAt    DateTime                   @updatedAt
+  
+  histories    DocumentTemplateHistory[]
+  documents    GeneratedDocument[]
+
+  @@map("document_templates")
+}
+
+model DocumentTemplateHistory {
+  id           String           @id @default(uuid())
+  templateId   String
+  template     DocumentTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  version      Int
+  htmlTemplate String           @db.Text
+  cssTemplate  String           @db.Text
+  variables    Json
+  pageSize     String
+  orientation  String
+  changedBy    String?          // User ID
+  changeReason String?
+  createdAt    DateTime         @default(now())
+
+  @@unique([templateId, version])
+  @@map("document_template_histories")
+}
+
+model GeneratedDocument {
+  id             String           @id @default(uuid())
+  templateId     String
+  template       DocumentTemplate @relation(fields: [templateId], references: [id])
+  studentId      String?
+  student        Student?         @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  teacherId      String?
+  teacher        Teacher?         @relation(fields: [teacherId], references: [id], onDelete: SetNull)
+  generatedBy    String
+  issuer         User             @relation(fields: [generatedBy], references: [id])
+  documentNumber String           @unique
+  htmlSnapshot   String           @db.Text
+  pdfPath        String?
+  variablesUsed  Json
+  status         String           @default("ISSUED") // "ISSUED", "REVOKED", "DRAFT"
+  version        Int              @default(1)
+  generatedAt    DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@map("generated_documents")
+}
+
+
+
+

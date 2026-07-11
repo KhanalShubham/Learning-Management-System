@@ -14,7 +14,7 @@ export const Fees = () => {
         eyebrow="Admissions"
         title="Fee structure, by grade level"
         description="One admission fee, paid once, and a monthly fee billed through the parent portal — no hidden line items."
-        crumbs={[{ label: 'Home', to: '/public' }, { label: 'Fee Structure' }]}
+        crumbs={[{ label: 'Home', to: '/' }, { label: 'Fee Structure' }]}
       />
 
       <section className="py-16 sm:py-20">
@@ -91,7 +91,7 @@ export const Fees = () => {
                 The school office can walk through the exact breakdown.
               </p>
             </div>
-            <Button href="/public#contact" variant="primary" className="shrink-0">
+            <Button href="#contact" variant="primary" className="shrink-0">
               Contact the Office
             </Button>
           </div>

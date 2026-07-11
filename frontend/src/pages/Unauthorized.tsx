@@ -16,7 +16,7 @@ export const Unauthorized = () => {
           </p>
         </div>
         <div className="pt-2">
-          <Link to="/">
+          <Link to="/dashboard">
             <Button size="sm" leftIcon={<ArrowLeft className="h-4 w-4" />}>
               Return to Dashboard
             </Button>

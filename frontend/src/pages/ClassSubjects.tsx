@@ -21,8 +21,10 @@ import {
   useCreateClassSubject,
   useUpdateClassSubject,
   useDeleteClassSubject,
+  useAssignTeacher,
 } from '@/features/academic-structure/hooks/useClassSubjects';
 import type { ClassSubject } from '@/features/academic-structure/types';
+import { useTeachers } from '@/features/faculty/hooks/useTeachers';
 
 const optionalPositive = z.union([z.coerce.number().int().positive(), z.literal('')]).optional();
 
@@ -63,7 +65,8 @@ const classSubjectSchema = z
         Number(data.practicalPassMarks) <= Number(data.practicalMarks)),
     { message: 'Practical pass marks is required and cannot exceed practical marks', path: ['practicalPassMarks'] }
   );
-type ClassSubjectFields = z.infer<typeof classSubjectSchema>;
+type ClassSubjectFormInput = z.input<typeof classSubjectSchema>;
+type ClassSubjectFields = z.output<typeof classSubjectSchema>;
 
 const errorMessage = (err: unknown) =>
   (err as AxiosError<{ message?: string }>)?.response?.data?.message || 'Please try again.';
@@ -83,6 +86,8 @@ export default function ClassSubjects() {
   const createClassSubject = useCreateClassSubject();
   const updateClassSubject = useUpdateClassSubject();
   const deleteClassSubject = useDeleteClassSubject();
+  const assignTeacher = useAssignTeacher();
+  const { data: activeTeachers } = useTeachers({ status: 'ACTIVE', take: 500 });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClassSubject, setEditingClassSubject] = useState<ClassSubject | null>(null);
@@ -93,7 +98,7 @@ export default function ClassSubjects() {
     reset,
     watch,
     formState: { errors, isSubmitting },
-  } = useForm<ClassSubjectFields>({ resolver: zodResolver(classSubjectSchema) });
+  } = useForm<ClassSubjectFormInput, unknown, ClassSubjectFields>({ resolver: zodResolver(classSubjectSchema) });
 
   const hasPractical = watch('hasPractical');
 
@@ -164,6 +169,15 @@ export default function ClassSubjects() {
     }
   };
 
+  const handleAssignTeacher = async (classSubject: ClassSubject, teacherId: string) => {
+    try {
+      await assignTeacher.mutateAsync({ id: classSubject.id, teacherId: teacherId || null });
+      toast({ title: teacherId ? 'Teacher Assigned' : 'Teacher Unassigned', variant: 'success' });
+    } catch (err) {
+      toast({ title: 'Could Not Update Assignment', description: errorMessage(err), variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -225,6 +239,7 @@ export default function ClassSubjects() {
           <TableHeader>
             <TableRow>
               <TableHead>Subject</TableHead>
+              <TableHead>Teacher</TableHead>
               <TableHead>Full Marks</TableHead>
               <TableHead>Pass Marks</TableHead>
               <TableHead>Practical</TableHead>
@@ -235,6 +250,20 @@ export default function ClassSubjects() {
             {classSubjects.map((classSubject) => (
               <TableRow key={classSubject.id}>
                 <TableCell className="font-semibold text-foreground">{classSubject.subject.name}</TableCell>
+                <TableCell>
+                  <Select
+                    value={classSubject.teacherId ?? ''}
+                    onChange={(e) => handleAssignTeacher(classSubject, e.target.value)}
+                    options={[
+                      { value: '', label: 'Unassigned' },
+                      ...(activeTeachers?.data ?? []).map((t) => ({
+                        value: t.id,
+                        label: `${t.firstName} ${t.lastName}`,
+                      })),
+                    ]}
+                    className="min-w-[10rem]"
+                  />
+                </TableCell>
                 <TableCell>{classSubject.fullMarks}</TableCell>
                 <TableCell>
                   {classSubject.passMarks}

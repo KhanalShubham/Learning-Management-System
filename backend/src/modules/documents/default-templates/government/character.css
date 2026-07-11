@@ -1,0 +1,302 @@
+/* Deukhuri Public School - Government Formal Portrait Theme */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+.certificate-container.deukhuri-gov {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 24px;
+  background-color: #ffffff;
+  color: #1f2937;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+.deukhuri-gov .watermark-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 50%;
+  height: 50%;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  opacity: 0.05;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.deukhuri-gov .border-outer {
+  border: 4px double #1f2937; /* Double charcoal border */
+  padding: 5px;
+  position: relative;
+  z-index: 2;
+}
+
+.deukhuri-gov .border-inner {
+  border: 1px solid #C62828; /* Deukhuri Red inner border */
+  padding: 30px;
+  position: relative;
+}
+
+/* Institutional Header */
+.deukhuri-gov .header-section {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.deukhuri-gov .logo-wrapper {
+  margin-bottom: 10px;
+}
+
+.deukhuri-gov .school-logo {
+  height: 75px;
+  width: auto;
+  object-fit: contain;
+}
+
+.deukhuri-gov .logo-placeholder {
+  font-size: 45px;
+  color: #C62828;
+}
+
+.deukhuri-gov .school-name {
+  font-family: 'Cinzel', serif;
+  font-size: 21px;
+  font-weight: 800;
+  color: #C62828; /* Deukhuri Red */
+  margin: 3px 0;
+  letter-spacing: 0.2px;
+}
+
+.deukhuri-gov .school-sub {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 2px 0;
+  text-transform: uppercase;
+}
+
+.deukhuri-gov .school-motto {
+  font-family: 'Cinzel', serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 10px;
+  color: #1a1a1a;
+  margin: 2px 0;
+}
+
+.deukhuri-gov .school-contact {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  color: #555;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.deukhuri-gov .gov-double-divider {
+  width: 100%;
+  height: 3px;
+  border-top: 1.5px solid #1f2937;
+  border-bottom: 0.5px solid #1f2937;
+  margin-top: 12px;
+}
+
+/* Title Section */
+.deukhuri-gov .title-section {
+  margin-bottom: 26px;
+}
+
+.deukhuri-gov .title-frame {
+  text-align: center;
+  border-top: 2px solid #C62828;
+  border-bottom: 2px solid #C62828;
+  padding: 6px 0;
+  margin: 0 auto;
+  max-width: 60%;
+}
+
+.deukhuri-gov .certificate-title {
+  font-family: 'Cinzel', serif;
+  font-size: 19px;
+  color: #C62828;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  margin: 0;
+}
+
+.deukhuri-gov .meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #4b5563;
+  margin-top: 14px;
+  padding: 0 15px;
+}
+
+.deukhuri-gov .serial-no {
+  font-family: monospace;
+  color: #C62828;
+}
+
+/* Body Section */
+.deukhuri-gov .body-section {
+  text-align: justify;
+  line-height: 1.85;
+  font-size: 14px;
+  margin: 0 auto 30px auto;
+  max-width: 90%;
+  color: #1f2937;
+}
+
+.deukhuri-gov .cert-text {
+  margin-bottom: 14px;
+  text-indent: 15px;
+}
+
+.deukhuri-gov .highlight-val {
+  color: #000000;
+  border-bottom: 1.5px solid #111;
+  padding: 0 4px;
+}
+
+.deukhuri-gov .student-name {
+  font-size: 16px;
+  border-bottom: 2px solid #C62828;
+}
+
+.deukhuri-gov .character-conduct {
+  color: #C62828;
+}
+
+/* Signatures footer */
+.deukhuri-gov .signatures-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 45px;
+  padding: 0 20px;
+}
+
+.deukhuri-gov .sig-block {
+  width: 140px;
+  text-align: center;
+}
+
+.deukhuri-gov .sig-line {
+  border-bottom: 1.5px solid #1f2937;
+  height: 38px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.deukhuri-gov .principal-sig {
+  max-height: 35px;
+  width: auto;
+}
+
+.deukhuri-gov .sig-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #374151;
+}
+
+/* Seal & QR Verification block */
+.deukhuri-gov .verification-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 40px;
+  padding: 15px 20px 0 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.deukhuri-gov .verification-left {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.deukhuri-gov .verify-seal-wrap {
+  width: 70px;
+  height: 70px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.deukhuri-gov .school-stamp {
+  max-height: 70px;
+  width: auto;
+}
+
+.deukhuri-gov .seal-placeholder {
+  border: 1.5px dashed #4b5563;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  font-weight: 700;
+  color: #4b5563;
+  text-align: center;
+}
+
+.deukhuri-gov .verification-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.deukhuri-gov .qr-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.deukhuri-gov .verify-qr {
+  width: 55px;
+  height: 55px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  padding: 1px;
+}
+
+.deukhuri-gov .qr-meta {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.deukhuri-gov .qr-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.deukhuri-gov .qr-url {
+  font-size: 8px;
+  font-family: monospace;
+  color: #C62828;
+  margin-top: 2px;
+}
+
+/* Print Overrides */
+@media print {
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .deukhuri-gov {
+    padding: 0;
+    background-color: #fff !important;
+  }
+  .deukhuri-gov .watermark-overlay {
+    opacity: 0.06 !important;
+  }
+}

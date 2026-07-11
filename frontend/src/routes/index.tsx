@@ -7,8 +7,6 @@ import PublicLayout from '@/layouts/PublicLayout';
 import { ProtectedRoute } from '@/features/auth/components/ProtectedRoute';
 import { PublicRoute } from '@/features/auth/components/PublicRoute';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/Table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/Tabs';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
@@ -25,10 +23,21 @@ const Subjects = lazy(() => import('@/pages/Subjects'));
 const ClassSubjects = lazy(() => import('@/pages/ClassSubjects'));
 const Users = lazy(() => import('@/pages/Users'));
 const Roles = lazy(() => import('@/pages/Roles'));
+const AttendanceDashboard = lazy(() => import('@/features/attendance/pages/AttendanceDashboard'));
+const MarkStudentAttendance = lazy(() => import('@/features/attendance/pages/MarkStudentAttendance'));
+const MarkTeacherAttendance = lazy(() => import('@/features/attendance/pages/MarkTeacherAttendance'));
+const MonthlyRegister = lazy(() => import('@/features/attendance/pages/MonthlyRegister'));
 const StudentDashboard = lazy(() => import('@/features/student/pages/StudentDashboard'));
 const Students = lazy(() => import('@/features/student/pages/Students'));
 const StudentAdmission = lazy(() => import('@/features/student/pages/StudentAdmission'));
 const StudentDetail = lazy(() => import('@/features/student/pages/StudentDetail'));
+const FacultyDashboard = lazy(() => import('@/features/faculty/pages/FacultyDashboard'));
+const Teachers = lazy(() => import('@/features/faculty/pages/Teachers'));
+const TeacherRegistration = lazy(() => import('@/features/faculty/pages/TeacherRegistration'));
+const TeacherDetail = lazy(() => import('@/features/faculty/pages/TeacherDetail'));
+const Departments = lazy(() => import('@/features/faculty/pages/Departments'));
+const Designations = lazy(() => import('@/features/faculty/pages/Designations'));
+const CmsAdmin = lazy(() => import('@/features/cms/pages/CmsAdmin'));
 const PublicHome = lazy(() => import('@/features/public-site/pages/PublicHome'));
 const NoticesList = lazy(() => import('@/features/public-site/pages/NoticesList'));
 const NoticeDetail = lazy(() => import('@/features/public-site/pages/NoticeDetail'));
@@ -37,6 +46,21 @@ const ProgramDetail = lazy(() => import('@/features/public-site/pages/ProgramDet
 const FacultyDirectory = lazy(() => import('@/features/public-site/pages/FacultyDirectory'));
 const FacultyProfile = lazy(() => import('@/features/public-site/pages/FacultyProfile'));
 const Fees = lazy(() => import('@/features/public-site/pages/Fees'));
+const ExamsDashboard = lazy(() => import('@/features/exams/pages/ExamsDashboard'));
+const ExamTerms = lazy(() => import('@/features/exams/pages/ExamTerms'));
+const ExamSchedules = lazy(() => import('@/features/exams/pages/ExamSchedules'));
+const MarksEntryLedger = lazy(() => import('@/features/exams/pages/MarksEntryLedger'));
+const ReportCardPreview = lazy(() => import('@/features/exams/pages/ReportCardPreview'));
+const ExamsAnalytics = lazy(() => import('@/features/exams/pages/ExamsAnalytics'));
+
+// Document & Certificate Engine Pages
+const DocumentDashboard = lazy(() => import('@/features/documents/pages/DocumentDashboard'));
+const TemplateLibrary = lazy(() => import('@/features/documents/pages/TemplateLibrary'));
+const TemplateEditor = lazy(() => import('@/features/documents/pages/TemplateEditor'));
+const DocumentGenerationWizard = lazy(() => import('@/features/documents/pages/DocumentGenerationWizard'));
+const DocumentHistory = lazy(() => import('@/features/documents/pages/DocumentHistory'));
+const PublicVerifyDocument = lazy(() => import('@/pages/PublicVerifyDocument'));
+
 const Unauthorized = lazy(() => import('@/pages/Unauthorized'));
 const SessionExpired = lazy(() => import('@/pages/SessionExpired'));
 const NotFound = lazy(() => import('@/pages/NotFound'));
@@ -48,9 +72,11 @@ const PageLoader = () => (
 );
 
 export const router = createBrowserRouter([
-  // Public Landing Layout Routes
+  // Public Landing Layout Routes — this is the site root; an unauthenticated
+  // (or authenticated) visitor to "/" sees the marketing homepage, not a
+  // login redirect. Authenticated users land on /dashboard after sign-in.
   {
-    path: '/public',
+    path: '/',
     element: <PublicLayout />,
     children: [
       {
@@ -178,7 +204,7 @@ export const router = createBrowserRouter([
 
   // Dashboard Framework Layout Routes
   {
-    path: '/',
+    path: '/dashboard',
     element: (
       <ProtectedRoute>
         <DashboardLayout />
@@ -272,51 +298,61 @@ export const router = createBrowserRouter([
       {
         path: 'teachers',
         element: (
-          <Suspense fallback={<PageLoader />}>
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-xl font-bold tracking-tight text-foreground">Teachers Directory</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">Academic instructors, coordinators, and designation mappings.</p>
-              </div>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Teacher Name</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Lectures / Week</TableHead>
-                    <TableHead>Designation</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[
-                    { name: 'Hari Prasad', dept: 'English & Arts', lectures: '18 hrs', title: 'Senior Lecturer' },
-                    { name: 'Laxmi Kumari', dept: 'Mathematics', lectures: '22 hrs', title: 'Department Head' },
-                    { name: 'Gopal Dev', dept: 'Natural Sciences', lectures: '14 hrs', title: 'Assistant Professor' },
-                  ].map((t) => (
-                    <TableRow key={t.name}>
-                      <TableCell className="font-semibold text-foreground">{t.name}</TableCell>
-                      <TableCell>{t.dept}</TableCell>
-                      <TableCell>{t.lectures}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{t.title}</Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </Suspense>
+          <ProtectedRoute requiredPermission="teachers.read">
+            <Suspense fallback={<PageLoader />}>
+              <FacultyDashboard />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'teachers/list',
+        element: (
+          <ProtectedRoute requiredPermission="teachers.read">
+            <Suspense fallback={<PageLoader />}>
+              <Teachers />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'teachers/new',
+        element: (
+          <ProtectedRoute requiredPermission="teachers.create">
+            <Suspense fallback={<PageLoader />}>
+              <TeacherRegistration />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'teachers/departments',
+        element: (
+          <ProtectedRoute requiredPermission="teachers.read">
+            <Suspense fallback={<PageLoader />}>
+              <Departments />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
         path: 'teachers/designations',
         element: (
-          <Suspense fallback={<PageLoader />}>
-            <div className="p-6 bg-card border border-border rounded-xl">
-              <h2 className="text-xl font-bold">Faculty Designations</h2>
-              <p className="text-muted-foreground mt-1 text-xs">Configure job titles, departments, and payroll profiles.</p>
-            </div>
-          </Suspense>
+          <ProtectedRoute requiredPermission="teachers.read">
+            <Suspense fallback={<PageLoader />}>
+              <Designations />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'teachers/:id',
+        element: (
+          <ProtectedRoute requiredPermission="teachers.read">
+            <Suspense fallback={<PageLoader />}>
+              <TeacherDetail />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
@@ -346,45 +382,111 @@ export const router = createBrowserRouter([
       {
         path: 'attendance',
         element: (
-          <Suspense fallback={<PageLoader />}>
-            <div className="p-6 bg-card border border-border rounded-xl">
-              <h2 className="text-xl font-bold">Daily Attendance Registry</h2>
-              <p className="text-muted-foreground mt-1 text-xs">File records, track absence excuses, and review statistics dashboards.</p>
-            </div>
-          </Suspense>
+          <ProtectedRoute requiredPermission="attendance.view">
+            <Suspense fallback={<PageLoader />}>
+              <AttendanceDashboard />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'attendance/students/mark',
+        element: (
+          <ProtectedRoute requiredPermission="attendance.mark">
+            <Suspense fallback={<PageLoader />}>
+              <MarkStudentAttendance />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'attendance/teachers/mark',
+        element: (
+          <ProtectedRoute requiredPermission="attendance.teacher.mark">
+            <Suspense fallback={<PageLoader />}>
+              <MarkTeacherAttendance />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'attendance/register',
+        element: (
+          <ProtectedRoute requiredPermission="attendance.view">
+            <Suspense fallback={<PageLoader />}>
+              <MonthlyRegister />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
         path: 'exams',
         element: (
-          <Suspense fallback={<PageLoader />}>
-            <div className="p-6 bg-card border border-border rounded-xl">
-              <h2 className="text-xl font-bold">Exams & Term Grading</h2>
-              <p className="text-muted-foreground mt-1 text-xs">Configure test structures, grading boundaries, and download transcript cards.</p>
-            </div>
-          </Suspense>
+          <ProtectedRoute requiredPermission="exams.view">
+            <Suspense fallback={<PageLoader />}>
+              <ExamsDashboard />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
-        path: 'fees',
+        path: 'exams/terms',
         element: (
-          <Suspense fallback={<PageLoader />}>
-            <div className="p-6 bg-card border border-border rounded-xl">
-              <h2 className="text-xl font-bold">Fees Invoicing & Finances</h2>
-              <p className="text-muted-foreground mt-1 text-xs">Dispatch receipts, log offline collections, and check outstanding balances.</p>
-            </div>
-          </Suspense>
+          <ProtectedRoute requiredPermission="exams.manage">
+            <Suspense fallback={<PageLoader />}>
+              <ExamTerms />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'exams/schedule',
+        element: (
+          <ProtectedRoute requiredPermission="exams.view">
+            <Suspense fallback={<PageLoader />}>
+              <ExamSchedules />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'exams/ledger',
+        element: (
+          <ProtectedRoute requiredPermission="exams.enter">
+            <Suspense fallback={<PageLoader />}>
+              <MarksEntryLedger />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'exams/report-cards',
+        element: (
+          <ProtectedRoute requiredPermission="exams.view">
+            <Suspense fallback={<PageLoader />}>
+              <ReportCardPreview />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'exams/analytics',
+        element: (
+          <ProtectedRoute requiredPermission="exams.view">
+            <Suspense fallback={<PageLoader />}>
+              <ExamsAnalytics />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
         path: 'cms',
         element: (
-          <Suspense fallback={<PageLoader />}>
-            <div className="p-6 bg-card border border-border rounded-xl">
-              <h2 className="text-xl font-bold">Website Content CMS</h2>
-              <p className="text-muted-foreground mt-1 text-xs">Author blog entries, campus notices, announcements, and events sliders.</p>
-            </div>
-          </Suspense>
+          <ProtectedRoute requiredPermission="cms.edit">
+            <Suspense fallback={<PageLoader />}>
+              <CmsAdmin />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
       {
@@ -457,7 +559,68 @@ export const router = createBrowserRouter([
           </Suspense>
         ),
       },
+      // Document Engine routes
+      {
+        path: 'documents',
+        element: (
+          <ProtectedRoute requiredPermission="certificates.view">
+            <Suspense fallback={<PageLoader />}>
+              <DocumentDashboard />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'documents/templates',
+        element: (
+          <ProtectedRoute requiredPermission="certificates.view">
+            <Suspense fallback={<PageLoader />}>
+              <TemplateLibrary />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'documents/templates/:id',
+        element: (
+          <ProtectedRoute requiredPermission="certificates.generate">
+            <Suspense fallback={<PageLoader />}>
+              <TemplateEditor />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'documents/generate',
+        element: (
+          <ProtectedRoute requiredPermission="certificates.generate">
+            <Suspense fallback={<PageLoader />}>
+              <DocumentGenerationWizard />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'documents/history',
+        element: (
+          <ProtectedRoute requiredPermission="certificates.view">
+            <Suspense fallback={<PageLoader />}>
+              <DocumentHistory />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
     ],
+  },
+
+  // Standalone Public Document Verification Route
+  {
+    path: '/verify/:id',
+    element: (
+      <Suspense fallback={<PageLoader />}>
+        <PublicVerifyDocument />
+      </Suspense>
+    ),
   },
 
   // Unauthorized view

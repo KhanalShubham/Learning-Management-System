@@ -50,4 +50,5 @@ export class BrandingController {
   public uploadSignature = this.handleImageUpload('principalSignatureUrl', 'school/signature');
   public uploadReportHeader = this.handleImageUpload('reportHeaderImageUrl', 'school/report-header');
   public uploadReportFooter = this.handleImageUpload('reportFooterImageUrl', 'school/report-footer');
+  public uploadCover = this.handleImageUpload('coverImageUrl', 'school/cover');
 }

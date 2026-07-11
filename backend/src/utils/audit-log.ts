@@ -9,6 +9,8 @@ export async function writeAuditLog(data: {
   userId?: string;
   email?: string;
   action: AuditAction;
+  entityType?: string;
+  entityId?: string;
   ipAddress?: string;
   userAgent?: string;
   details?: string;
@@ -18,6 +20,8 @@ export async function writeAuditLog(data: {
       userId: data.userId || null,
       email: data.email || null,
       action: data.action,
+      entityType: data.entityType || null,
+      entityId: data.entityId || null,
       ipAddress: data.ipAddress || null,
       userAgent: data.userAgent || null,
       details: data.details || null,

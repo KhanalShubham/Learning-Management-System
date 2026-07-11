@@ -12,6 +12,7 @@ export interface PublicSiteInfo {
   address: string | null;
   googleMapLink: string | null;
   logoUrl: string | null;
+  coverImageUrl: string | null;
   principal: { name: string; photoUrl: string | null } | null;
   studentCount: number;
 }
@@ -40,6 +41,7 @@ export class PublicSiteService {
       address: [profile.address, profile.municipality, profile.district].filter(Boolean).join(', ') || null,
       googleMapLink: profile.googleMapLink,
       logoUrl: branding.logoUrl,
+      coverImageUrl: branding.coverImageUrl,
       principal: principal?.name ? { name: principal.name, photoUrl: principal.photoUrl } : null,
       studentCount,
     };

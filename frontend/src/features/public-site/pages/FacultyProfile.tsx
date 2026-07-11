@@ -10,7 +10,7 @@ export const FacultyProfile = () => {
   const teacher = teachers.find((t) => t.slug === slug);
 
   if (!teacher) {
-    return <Navigate to="/public/faculty" replace />;
+    return <Navigate to="/faculty" replace />;
   }
 
   const colleagues = teachers.filter((t) => t.department === teacher.department && t.slug !== teacher.slug);
@@ -20,11 +20,11 @@ export const FacultyProfile = () => {
       <section className="bg-[var(--brand-surface)] border-b border-[var(--brand-border)] py-16 sm:py-20">
         <Container>
           <nav className="text-xs text-[var(--brand-text-soft)] mb-6" aria-label="Breadcrumb">
-            <Link to="/public" className="hover:text-[var(--brand-charcoal)] transition-colors">
+            <Link to="/" className="hover:text-[var(--brand-charcoal)] transition-colors">
               Home
             </Link>
             {' / '}
-            <Link to="/public/faculty" className="hover:text-[var(--brand-charcoal)] transition-colors">
+            <Link to="/faculty" className="hover:text-[var(--brand-charcoal)] transition-colors">
               Faculty
             </Link>
             {' / '}
@@ -83,7 +83,7 @@ export const FacultyProfile = () => {
               {colleagues.map((colleague) => (
                 <Link
                   key={colleague.slug}
-                  to={`/public/faculty/${colleague.slug}`}
+                  to={`/faculty/${colleague.slug}`}
                   className="rounded-[var(--radius-pill)] border border-[var(--brand-border)] px-4 py-2 text-sm font-medium text-[var(--brand-charcoal)] hover:border-[var(--brand-red)] transition-colors"
                 >
                   {colleague.name}
@@ -95,7 +95,7 @@ export const FacultyProfile = () => {
 
         <Container className="mt-10">
           <Link
-            to="/public/faculty"
+            to="/faculty"
             className="text-sm font-semibold text-[var(--brand-red)] hover:text-[var(--brand-red-dark)] transition-colors"
           >
             ← Back to faculty directory

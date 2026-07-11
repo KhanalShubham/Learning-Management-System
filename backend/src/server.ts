@@ -12,6 +12,15 @@ const startServer = async () => {
       logger.info('Connecting to PostgreSQL database via Prisma...');
       await prisma.$connect();
       logger.info('Database connection established successfully.');
+      
+      // Initialize/Seed default document templates
+      try {
+        const { DocumentService } = await import('@/modules/documents/document.service');
+        const documentService = new DocumentService();
+        await documentService.initializeDefaultTemplates();
+      } catch (seedError) {
+        logger.error('Failed to initialize default templates on startup:', seedError);
+      }
     } catch (dbError) {
       logger.warn('⚠️ Could not connect to the database. Server is running but database operations will fail.');
       logger.warn(dbError instanceof Error ? dbError.message : String(dbError));

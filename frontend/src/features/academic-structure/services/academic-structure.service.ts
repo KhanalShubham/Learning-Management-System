@@ -121,6 +121,11 @@ export const academicStructureService = {
     await api.delete(`/academic-structure/class-subjects/${id}`);
   },
 
+  async assignTeacher(id: string, teacherId: string | null): Promise<ClassSubject> {
+    const response = await api.post(`/academic-structure/class-subjects/${id}/assign-teacher`, { teacherId });
+    return response.data.data.classSubject;
+  },
+
   async listExamTypes(academicYearId?: string, includeArchived?: boolean): Promise<ExamType[]> {
     const response = await api.get('/academic-structure/exam-types', {
       params: { academicYearId, includeArchived },

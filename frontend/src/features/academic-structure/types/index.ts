@@ -60,12 +60,21 @@ export interface CreateSubjectPayload {
 
 export type UpdateSubjectPayload = Partial<CreateSubjectPayload>;
 
+export interface ClassSubjectTeacher {
+  id: string;
+  employeeId: string;
+  firstName: string;
+  lastName: string;
+}
+
 export interface ClassSubject {
   id: string;
   classId: string;
   subjectId: string;
   subject: Subject;
   class: Class;
+  teacherId: string | null;
+  teacher: ClassSubjectTeacher | null;
   fullMarks: number;
   passMarks: number;
   hasPractical: boolean;

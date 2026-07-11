@@ -16,6 +16,10 @@ Full design rationale: [faculty-engine-design-spec.md](../architecture/faculty-e
 
 `POST /teachers/:id/status` is gated at the route layer by `teachers.update` **or** `teachers.archive` (`requireAnyPermission`); the service picks the exact permission required by the target status (see [Status lifecycle](#status-lifecycle)).
 
+## Audit logging
+
+Every HR-record-level mutation writes an `AuditLog` row: `TEACHER_REGISTERED/UPDATED/STATUS_CHANGED/ARCHIVED`, `TEACHER_LEAVE_BALANCE_ADJUSTED`, and `DEPARTMENT_CREATED/UPDATED/ARCHIVED/DELETED`/`DESIGNATION_CREATED/UPDATED/ARCHIVED/DELETED`. Qualification/emergency-contact/document add-remove deliberately do **not** get their own audit rows — they're low-stakes profile sub-resources (same tier as a phone-number edit), not standalone HR events like a department reorg, a status change, or a leave-balance correction. Revisit this scoping if these sub-resources ever need their own compliance trail.
+
 ## Departments & Designations (reference data)
 
 Same shape as the Academic Engine's `Subject`/`Class` — archive-only retirement, hard-delete blocked while referenced.

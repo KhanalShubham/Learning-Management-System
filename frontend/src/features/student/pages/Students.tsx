@@ -141,7 +141,7 @@ export default function Students() {
             Export CSV
           </Button>
           {canAdmit && (
-            <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate('/students/admission')}>
+            <Button size="sm" leftIcon={<Plus className="h-4 w-4" />} onClick={() => navigate('/dashboard/students/admission')}>
               Admit Student
             </Button>
           )}
@@ -209,7 +209,7 @@ export default function Students() {
           title="No students found"
           description="Adjust your filters or admit a new student to get started."
           actionLabel={canAdmit ? 'Admit Student' : undefined}
-          onAction={canAdmit ? () => navigate('/students/admission') : undefined}
+          onAction={canAdmit ? () => navigate('/dashboard/students/admission') : undefined}
         />
       ) : (
         <>
@@ -231,7 +231,7 @@ export default function Students() {
                   <TableRow
                     key={student.id}
                     className="cursor-pointer"
-                    onClick={() => navigate(`/students/${student.id}`)}
+                    onClick={() => navigate(`/dashboard/students/${student.id}`)}
                   >
                     <TableCell className="font-mono text-xs">{student.admissionNumber}</TableCell>
                     <TableCell className="font-semibold text-foreground">

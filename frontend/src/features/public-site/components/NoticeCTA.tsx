@@ -21,7 +21,7 @@ export function NoticeCTA() {
           </div>
 
           <Link
-            to="/public/notices"
+            to="/notices"
             className="inline-flex shrink-0 items-center gap-2 rounded-[var(--radius-pill)] bg-[var(--brand-red)] px-6 py-3 text-sm font-semibold text-white hover:bg-[var(--brand-red-dark)] transition-colors"
           >
             Browse the Notice Board <ArrowRight className="h-4 w-4" />

@@ -42,5 +42,25 @@ router.use('/faculty', facultyRouter);
 import publicSiteRouter from '@/modules/public-site/public-site.routes';
 router.use('/public', publicSiteRouter);
 
+// Notice CMS modular routes (public reads, authenticated admin writes)
+import noticeRouter from '@/modules/notices/notice.routes';
+router.use('/notices', noticeRouter);
+
+// Gallery CMS modular routes (public reads, authenticated admin writes)
+import galleryRouter from '@/modules/gallery/gallery.routes';
+router.use('/gallery', galleryRouter);
+
+// Attendance engine modular routes
+import attendanceRouter from '@/modules/attendance/attendance.routes';
+router.use('/attendance', attendanceRouter);
+
+// Exams engine modular routes
+import examsRouter from '@/modules/exams/exams.routes';
+router.use('/exams', examsRouter);
+
+// Document & Certificate Engine modular routes
+import documentRouter from '@/modules/documents/document.routes';
+router.use('/documents', documentRouter);
+
 export default router;
 

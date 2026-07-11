@@ -38,7 +38,7 @@ export default function StudentDashboard() {
       description: 'Admit a new applicant',
       icon: UserPlus,
       color: 'bg-blue-500 hover:bg-blue-600',
-      onClick: () => navigate('/students/admission'),
+      onClick: () => navigate('/dashboard/students/admission'),
       visible: canAdmit,
     },
     {
@@ -46,7 +46,7 @@ export default function StudentDashboard() {
       description: 'Browse the full registry',
       icon: List,
       color: 'bg-emerald-500 hover:bg-emerald-600',
-      onClick: () => navigate('/students/list'),
+      onClick: () => navigate('/dashboard/students/list'),
       visible: true,
     },
   ].filter((action) => action.visible);
@@ -130,7 +130,7 @@ export default function StudentDashboard() {
                       <li
                         key={student.id}
                         className="flex items-center justify-between py-3 cursor-pointer hover:bg-secondary/30 -mx-2 px-2 rounded-lg transition-colors"
-                        onClick={() => navigate(`/students/${student.id}`)}
+                        onClick={() => navigate(`/dashboard/students/${student.id}`)}
                       >
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-foreground truncate">

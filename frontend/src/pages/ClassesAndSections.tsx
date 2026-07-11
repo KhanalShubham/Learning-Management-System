@@ -36,14 +36,16 @@ const classSchema = z.object({
   displayOrder: z.coerce.number().int(),
   description: z.string().optional(),
 });
-type ClassFields = z.infer<typeof classSchema>;
+type ClassFormInput = z.input<typeof classSchema>;
+type ClassFields = z.output<typeof classSchema>;
 
 const sectionSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   capacity: z.union([z.coerce.number().int().positive(), z.literal('')]).optional(),
   roomNumber: z.string().optional(),
 });
-type SectionFields = z.infer<typeof sectionSchema>;
+type SectionFormInput = z.input<typeof sectionSchema>;
+type SectionFields = z.output<typeof sectionSchema>;
 
 const errorMessage = (err: unknown) =>
   (err as AxiosError<{ message?: string }>)?.response?.data?.message || 'Please try again.';
@@ -65,7 +67,7 @@ function SectionsPanel({ cls, onClose }: { cls: Class; onClose: () => void }) {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<SectionFields>({ resolver: zodResolver(sectionSchema) });
+  } = useForm<SectionFormInput, unknown, SectionFields>({ resolver: zodResolver(sectionSchema) });
 
   const openCreate = () => {
     setEditingSection(null);
@@ -236,7 +238,7 @@ export default function ClassesAndSections() {
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-  } = useForm<ClassFields>({ resolver: zodResolver(classSchema) });
+  } = useForm<ClassFormInput, unknown, ClassFields>({ resolver: zodResolver(classSchema) });
 
   const openCreateModal = () => {
     setEditingClass(null);

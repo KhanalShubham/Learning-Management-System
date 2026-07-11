@@ -285,7 +285,7 @@ export const Header = () => {
                 <button
                   onClick={() => {
                     setUserOpen(false);
-                    navigate('/change-password');
+                    navigate('/dashboard/change-password');
                   }}
                   className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
                 >
@@ -295,7 +295,7 @@ export const Header = () => {
                 <button
                   onClick={() => {
                     setUserOpen(false);
-                    navigate('/settings');
+                    navigate('/dashboard/settings');
                   }}
                   className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors cursor-pointer"
                 >

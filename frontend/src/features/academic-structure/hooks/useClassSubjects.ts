@@ -39,3 +39,13 @@ export const useDeleteClassSubject = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['class-subjects'] }),
   });
 };
+
+export const useAssignTeacher = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, teacherId }: { id: string; teacherId: string | null }) =>
+      academicStructureService.assignTeacher(id, teacherId),
+    onSuccess: (classSubject) =>
+      queryClient.invalidateQueries({ queryKey: classSubjectsQueryKey(classSubject.classId) }),
+  });
+};

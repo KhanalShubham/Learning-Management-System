@@ -96,13 +96,13 @@ graph TD
 | **Milestone 3** | **Authentication** | Login portals, secure JWT session management (hardened secrets, refresh-queuing, cross-tab session sync), password reset flow, and Role-Based Access Control (RBAC) with route protection guards. | ✅ **Complete** |
 | **Milestone 4** | **School Configuration** | School Profile, Branding (Cloudinary logo/signature uploads), Leadership directory, Academic Years/Terms, Grading Scale, and general Settings. | ✅ **Complete** |
 | **Milestone 5** | **Academic Structure** | `AcademicYear → Class → Section → Subject → ClassSubject → ExamType` reference-data engine, archive-only retirement, dedicated permissions. | ✅ **Complete** |
-| **Milestone 6** | **Faculty Management** | Department/Designation reference data, Teacher registration workflow (employee-number generation), qualifications, emergency contacts, documents, leave-balance ledger, and an additive `teacherId` link on the Academic Engine's `ClassSubject`. | 🚧 *Unreleased (v0.7.0)* — backend shipped, pending version tag |
-| **Milestone 7** | **Student Management** | Admission workflow (per-year admission numbers, guardians, documents, uploads), Student Dashboard, registry with search/CSV export, promotion workflow, and audit logging. | 🚧 *Unreleased (v0.6.0)* — shipped, pending version tag |
-| **Milestone 8** | **Attendance Registry** | Daily assembly registry, class trackers, automated absence reports, and the leave request/approval workflow (Faculty Engine only tracks the resulting balance). | 📋 *Planned* |
+| **Milestone 6** | **Faculty Management** | Department/Designation reference data, Teacher registration workflow (employee-number generation), qualifications, emergency contacts, documents, leave-balance ledger, an additive `teacherId` link on the Academic Engine's `ClassSubject`, and the full Teacher Directory frontend. | ✅ **Complete** |
+| **Milestone 7** | **Student Management** | Admission workflow (per-year admission numbers, guardians, documents, uploads), Student Dashboard, registry with search/CSV export, promotion workflow, and audit logging. | ✅ **Complete** |
+| **Milestone 8** | **Attendance Registry** | Daily rosters marking for students & teachers, calendar checks (weekends & holidays), session locks & overrides, dashboard stats, monthly register matrix, and CSV exports. | ✅ **Complete** |
 | **Milestone 9** | **Exams & Grading** | Examination rosters, marking ledgers, term GPA grids, and certificate PDF generation. | 📋 *Planned* |
 | **Milestone 10** | **Billing & CMS** | Student fee invoicing, invoice clearance (including teacher payroll — Faculty Engine only holds a bare `basicSalary` reference field), notice announcements, and an admin-editable public campus landing page. | 📋 *Planned* |
 
-> Delivery order deviated from the milestone numbering above: **Student Management (M7)** shipped before **Faculty Management (M6)**'s frontend, though Faculty's *backend* has now landed (see Feature Matrix). The roadmap numbers reflect the original database-dependency plan, not strict build order. Faculty Management's own frontend (teacher directory UI) is deferred to a follow-up, tracked separately from this backend milestone.
+> Delivery order deviated from the milestone numbering above: **Student Management (M7)** shipped before **Faculty Management (M6)**'s frontend, though Faculty's backend landed first and its frontend has now caught up (see Feature Matrix). The roadmap numbers reflect the original database-dependency plan, not strict build order.
 
 ---
 
@@ -116,10 +116,10 @@ A flatter, scan-friendly view of the same status, split by layer:
 | School Configuration | ✅ | ✅ | ✅ | Complete |
 | Academic Structure Engine | ✅ | ✅ | ✅ | Complete |
 | User & Role Management | ✅ | ✅ | ✅ | Complete |
-| Student Admission Engine | ✅ | ✅ | ✅ | Unreleased (v0.6.0) |
+| Student Admission Engine | ✅ | ✅ | ✅ | Complete |
 | Public Website (marketing site) | ✅ *(read-only)* | ✅ | ✅ | Beta — static content, see below |
-| Faculty Management Engine | ✅ | ❌ | ✅ | Unreleased (v0.7.0) — backend only, directory UI not yet built |
-| Attendance Registry | ❌ | ❌ | ❌ | Planned |
+| Faculty Management Engine | ✅ | ✅ | ✅ | Complete |
+| Attendance Registry | ✅ | ✅ | ✅ | Complete |
 | Examination & Grading | ❌ | ❌ | ❌ | Planned |
 | Billing & Finance | ❌ | ❌ | ❌ | Planned |
 | Notice / Content CMS | ❌ | ❌ | ❌ | Planned |
@@ -152,7 +152,7 @@ A public-facing marketing site for the school lives at `/public` (`frontend/src/
 | **v0.3.0** | Authentication hardening, School Configuration Engine, Academic Structure Engine, Users & Roles. | ✅ Released |
 | **v0.5.0 – v0.5.1** | Student Admission Engine (backend) — admission workflow, then reworked with `Enrollment` history before real data existed. | ✅ Released |
 | **v0.6.0** | Student Admission Engine (frontend) — Dashboard, registry, promotion workflow, audit logging; Public Website homepage + content pages. | 🚧 Unreleased |
-| **v0.7.0** | Faculty Management Engine (backend) — Department/Designation, Teacher registration workflow, qualifications, emergency contacts, documents, leave-balance ledger, `ClassSubject` teacher assignment. | 🚧 Unreleased |
+| **v0.7.0** | Faculty Management Engine (backend + frontend) — Department/Designation, Teacher registration workflow, qualifications, emergency contacts, documents, leave-balance ledger, `ClassSubject` teacher assignment, and the full Teacher Directory UI. | 🚧 Unreleased |
 | **v0.8.0** | Attendance Registry, including the leave request/approval workflow. | 📋 Planned |
 | **v0.9.0** | Examination & Grading. | 📋 Planned |
 | **v0.10.0** | Billing, Finance (incl. teacher payroll), and Notice/Content CMS (closes the Public Website CMS gap above). | 📋 Planned |
