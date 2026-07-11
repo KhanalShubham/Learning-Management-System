@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import { env } from '@/config/env';
 import { morganMiddleware } from '@/middleware/morgan.middleware';
 import { errorHandler, AppError } from '@/middleware/error.middleware';
-import apiRouter from '@/routes';
+import apiRouter from '@/routes/index';
 
 class App {
   public app: Express;
