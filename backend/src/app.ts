@@ -39,6 +39,8 @@ class App {
     this.app.get('/', (req: Request, res: Response) => {
       res.status(200).send('Welcome to Deukhuri Digital Campus ERP API');
     });
+    console.log('--- DEBUG: apiRouter is:', apiRouter);
+    console.log('--- DEBUG: typeof apiRouter:', typeof apiRouter);
     this.app.use('/api/v1', apiRouter);
   }
 
