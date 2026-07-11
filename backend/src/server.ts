@@ -26,9 +26,11 @@ const startServer = async () => {
       logger.warn(dbError instanceof Error ? dbError.message : String(dbError));
     }
 
-    server.listen(env.PORT, () => {
-      logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
-    });
+    if (!process.env.VERCEL) {
+      server.listen(env.PORT, () => {
+        logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${env.PORT}`);
+      });
+    }
   } catch (error) {
     logger.error('Failed to start server:');
     logger.error(error instanceof Error ? error.message : String(error));
@@ -50,3 +52,5 @@ process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
 startServer();
+
+export default app;

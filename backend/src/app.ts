@@ -20,7 +20,13 @@ class App {
     this.app.use(helmet());
     this.app.use(
       cors({
-        origin: env.CORS_ORIGIN,
+        origin: (origin, callback) => {
+          if (!origin || origin.includes('localhost') || origin.endsWith('vercel.app') || origin === env.CORS_ORIGIN) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
         credentials: true,
       })
     );
