@@ -5,7 +5,7 @@ import { IBrandingRepository, BrandingRepository } from '@/modules/system-config
 import { prisma } from '@/prisma/client';
 import { IDocumentRepository, DocumentRepository, GeneratedDocumentWithRelations } from './document.repository';
 import { IPDFService, PDFService } from './pdf.service';
-import { uploadDocumentBuffer } from '@/config/cloudinary';
+import { uploadPdfBuffer } from '@/config/cloudinary';
 import { AuditAction, DocumentTemplate, GeneratedDocument, RecordStatus } from '@prisma/client';
 import { writeAuditLog } from '@/utils/audit-log';
 import { AppError } from '@/middleware/error.middleware';
@@ -181,11 +181,37 @@ export class DocumentService {
 
   // --- Dynamic Live Preview Renderer ---
 
-  public async previewTemplate(htmlTemplate: string, cssTemplate: string, variables: Record<string, any>): Promise<string> {
+  public async previewTemplate(
+    htmlTemplate: string,
+    cssTemplate: string,
+    variables: Record<string, any>,
+    studentId?: string,
+    teacherId?: string
+  ): Promise<string> {
     // Generate a mock QR Code for previews
     const mockQrBase64 = await QRCode.toDataURL('http://deukhuri.edu.np/verify/preview-mock-id');
+
+    // Always resolve real school/principal branding (logo, name, motto, stamp) so
+    // every preview — including template thumbnails with no recipient — shows the
+    // school's actual identity instead of blanks. When a real recipient is also
+    // selected (Wizard step 3 live preview), this additionally resolves their real
+    // student/teacher/guardian data — the same path generateDocument() uses —
+    // instead of just echoing back whatever placeholder `variables` the caller sent.
+    // `variables` only carries de-prefixed custom.* overrides when a real recipient
+    // is selected (that's how the Wizard sends them); in dummy/thumbnail mode it's a
+    // flat bag of already-fully-qualified keys (e.g. "student.fullName"), which must
+    // NOT be re-prefixed with "custom." here — hence only forwarding it as customVars
+    // when there's an actual recipient to resolve.
+    const resolvedVars = await this.resolveVariables(
+      'PREVIEW',
+      studentId,
+      teacherId,
+      studentId || teacherId ? variables : {}
+    );
+
     const enrichedVariables = {
       ...variables,
+      ...resolvedVars,
       'document.number': 'CERT-YYYY-00000',
       'document.id': 'preview-mock-id',
       'document.qrCode': mockQrBase64,
@@ -243,7 +269,7 @@ export class DocumentService {
     // Upload PDF to Cloudinary
     let pdfUrl = '';
     try {
-      pdfUrl = await uploadDocumentBuffer(pdfBuffer, `documents/${template.category.toLowerCase()}`);
+      pdfUrl = await uploadPdfBuffer(pdfBuffer, `documents/${template.category.toLowerCase()}`);
     } catch (err) {
       logger.error('Failed uploading PDF to Cloudinary, falling back to local file storage path simulation.', err);
       // Fallback url
@@ -397,28 +423,21 @@ export class DocumentService {
   private compileHTML(htmlTemplate: string, cssTemplate: string, variables: Record<string, any>): string {
     let rendered = htmlTemplate;
 
+    // `variables` is a FLAT dictionary keyed by literal dotted strings (e.g.
+    // resolveVariables sets `resolved['student.fullName'] = ...`), NOT a nested
+    // object. Look values up by the whole path as-is — do not split on '.' and
+    // walk it like a nested object path, or every lookup silently misses and every
+    // template variable renders as an empty string.
+
     // 1. Resolve conditional {{#if path}} ... {{else}} ... {{/if}} statements
     rendered = rendered.replace(/\{\{#if\s+([a-zA-Z0-9_\-\.]+)\}\}([\s\S]*?)(?:\{\{else\}\}([\s\S]*?))?\{\{\/if\}\}/g, (match, path, ifContent, elseContent) => {
-      const parts = path.split('.');
-      let current: any = variables;
-      for (const part of parts) {
-        if (current === null || current === undefined) {
-          current = undefined;
-          break;
-        }
-        current = current[part];
-      }
+      const current = variables[path];
       return current ? ifContent : (elseContent || '');
     });
 
     // 2. Resolve standard {{variable}} insertions
     rendered = rendered.replace(/\{\{\s*([a-zA-Z0-9_\-\.]+)\s*\}\}/g, (match, path) => {
-      const parts = path.split('.');
-      let current = variables;
-      for (const part of parts) {
-        if (current === null || current === undefined) return '';
-        current = current[part];
-      }
+      const current = variables[path];
       return current !== undefined && current !== null ? String(current) : '';
     });
 

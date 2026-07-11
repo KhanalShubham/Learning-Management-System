@@ -210,20 +210,31 @@ export class StudentRepository implements IStudentRepository {
           }
         : undefined;
 
+    // Tokenized fuzzy search: each whitespace-separated word must match somewhere
+    // (name, admission #, roll #, or guardian), so "Gita Sharma" finds a student
+    // whose first/last name match different tokens, not just one field verbatim.
+    const searchTokens = search ? search.trim().split(/\s+/).filter(Boolean) : [];
+    const tokenClauses: Prisma.StudentWhereInput[] = searchTokens.map((token) => {
+      const asNumber = Number(token);
+      return {
+        OR: [
+          { firstName: { contains: token, mode: 'insensitive' } },
+          { middleName: { contains: token, mode: 'insensitive' } },
+          { lastName: { contains: token, mode: 'insensitive' } },
+          { admissionNumber: { contains: token, mode: 'insensitive' } },
+          { guardians: { some: { fullName: { contains: token, mode: 'insensitive' } } } },
+          { guardians: { some: { phone: { contains: token, mode: 'insensitive' } } } },
+          ...(Number.isInteger(asNumber)
+            ? [{ enrollments: { some: { rollNumber: asNumber } } }]
+            : []),
+        ],
+      };
+    });
+
     const where: Prisma.StudentWhereInput = {
       ...(enrollmentFilter ? { enrollments: enrollmentFilter } : {}),
       ...(status ? { status } : {}),
-      ...(search
-        ? {
-            OR: [
-              { firstName: { contains: search, mode: 'insensitive' } },
-              { lastName: { contains: search, mode: 'insensitive' } },
-              { admissionNumber: { contains: search, mode: 'insensitive' } },
-              { guardians: { some: { fullName: { contains: search, mode: 'insensitive' } } } },
-              { guardians: { some: { phone: { contains: search, mode: 'insensitive' } } } },
-            ],
-          }
-        : {}),
+      ...(tokenClauses.length ? { AND: tokenClauses } : {}),
     };
 
     const [data, total] = await Promise.all([

@@ -194,22 +194,27 @@ export class TeacherRepository implements ITeacherRepository {
   ): Promise<{ data: TeacherListItem[]; total: number }> {
     const { departmentId, designationId, status, employmentType, search, skip = 0, take = 20 } = filters;
 
+    // Tokenized fuzzy search: each whitespace-separated word must match somewhere
+    // (name, employee #, phone, or email), so "Ram Thapa" finds a teacher whose
+    // first/last name match different tokens, not just one field verbatim.
+    const searchTokens = search ? search.trim().split(/\s+/).filter(Boolean) : [];
+    const tokenClauses: Prisma.TeacherWhereInput[] = searchTokens.map((token) => ({
+      OR: [
+        { firstName: { contains: token, mode: 'insensitive' } },
+        { middleName: { contains: token, mode: 'insensitive' } },
+        { lastName: { contains: token, mode: 'insensitive' } },
+        { employeeId: { contains: token, mode: 'insensitive' } },
+        { phone: { contains: token, mode: 'insensitive' } },
+        { email: { contains: token, mode: 'insensitive' } },
+      ],
+    }));
+
     const where: Prisma.TeacherWhereInput = {
       ...(departmentId ? { departmentId } : {}),
       ...(designationId ? { designationId } : {}),
       ...(status ? { status } : {}),
       ...(employmentType ? { employmentType } : {}),
-      ...(search
-        ? {
-            OR: [
-              { firstName: { contains: search, mode: 'insensitive' } },
-              { lastName: { contains: search, mode: 'insensitive' } },
-              { employeeId: { contains: search, mode: 'insensitive' } },
-              { phone: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } },
-            ],
-          }
-        : {}),
+      ...(tokenClauses.length ? { AND: tokenClauses } : {}),
     };
 
     const [data, total] = await Promise.all([

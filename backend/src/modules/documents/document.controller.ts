@@ -95,7 +95,9 @@ export class DocumentController {
       const compiledHTML = await documentService.previewTemplate(
         validated.htmlTemplate,
         validated.cssTemplate,
-        validated.variables
+        validated.variables,
+        validated.studentId,
+        validated.teacherId
       );
       
       // Return raw compiled HTML content to render directly inside iframe

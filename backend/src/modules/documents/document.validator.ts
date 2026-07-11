@@ -43,6 +43,8 @@ export const previewTemplateSchema = z.object({
   htmlTemplate: z.string().min(1, 'HTML template is required'),
   cssTemplate: z.string().default(''),
   variables: z.record(z.any()).default({}),
+  studentId: z.string().uuid('Invalid student ID').optional(),
+  teacherId: z.string().uuid('Invalid teacher ID').optional(),
 });
 
 // Schema for generating a new document instance

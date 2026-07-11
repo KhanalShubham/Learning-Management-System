@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -12,6 +12,13 @@ import {
   RectangleHorizontal,
   RectangleVertical,
   Wand2,
+  Layout,
+  UserSearch,
+  ListChecks,
+  UserRound,
+  History,
+  X,
+  CheckCircle2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -21,8 +28,56 @@ import { documentService } from '../services/document.service';
 import type { DocumentTemplate, GeneratedDocument } from '../types';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/services/api';
+import { studentService } from '@/features/student/services/student.service';
+import { facultyService } from '@/features/faculty/services/faculty.service';
 import { TemplateThumbnail } from '../components/DocumentThumbnail';
 import { getCategoryMeta } from '../constants/categories';
+
+interface RecipientLite {
+  id: string;
+  type: 'STUDENT' | 'TEACHER';
+  name: string;
+  code: string;
+  subtitle: string;
+  status: string;
+  photoUrl?: string | null;
+}
+
+const RECENTS_KEY = 'documents:recent-recipients';
+
+const loadRecents = (type: 'STUDENT' | 'TEACHER'): RecipientLite[] => {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    const all: RecipientLite[] = raw ? JSON.parse(raw) : [];
+    return all.filter((r) => r.type === type).slice(0, 8);
+  } catch {
+    return [];
+  }
+};
+
+const pushRecent = (recipient: RecipientLite) => {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY);
+    const all: RecipientLite[] = raw ? JSON.parse(raw) : [];
+    const deduped = [recipient, ...all.filter((r) => !(r.id === recipient.id && r.type === recipient.type))];
+    localStorage.setItem(RECENTS_KEY, JSON.stringify(deduped.slice(0, 20)));
+  } catch {
+    /* ignore storage failures */
+  }
+};
+
+const STEPS = [
+  { label: 'Template', icon: Layout },
+  { label: 'Recipient', icon: UserSearch },
+  { label: 'Details', icon: ListChecks },
+  { label: 'Preview & Generate', icon: Wand2 },
+];
+
+const statusVariant = (status: string) => {
+  if (status === 'ACTIVE') return 'success' as const;
+  if (['SUSPENDED', 'TERMINATED', 'WITHDRAWN'].includes(status)) return 'destructive' as const;
+  return 'secondary' as const;
+};
 
 export const DocumentGenerationWizard = () => {
   const { toast } = useToast();
@@ -36,12 +91,22 @@ export const DocumentGenerationWizard = () => {
   // Data states
   const [templates, setTemplates] = useState<DocumentTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<DocumentTemplate | null>(null);
-  
+
+  const isTeacherDoc = useMemo(
+    () => !!selectedTemplate && (selectedTemplate.category === 'EMPLOYMENT' || selectedTemplate.type.includes('TEACHER')),
+    [selectedTemplate]
+  );
+
   // Recipient Search
   const [searchQuery, setSearchQuery] = useState('');
-  const [recipients, setRecipients] = useState<any[]>([]);
-  const [selectedRecipient, setSelectedRecipient] = useState<any | null>(null);
+  const [recipients, setRecipients] = useState<RecipientLite[]>([]);
+  const [selectedRecipient, setSelectedRecipient] = useState<RecipientLite | null>(null);
+  const [recipientDetail, setRecipientDetail] = useState<any | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [recentRecipients, setRecentRecipients] = useState<RecipientLite[]>([]);
+  const searchSeq = useRef(0);
 
   // Variables Input
   const [variableInputs, setVariableInputs] = useState<Record<string, string>>({});
@@ -77,63 +142,114 @@ export const DocumentGenerationWizard = () => {
   const handleSelectTemplate = (template: DocumentTemplate) => {
     setSelectedTemplate(template);
     setSelectedRecipient(null);
+    setRecipientDetail(null);
     setSearchQuery('');
     setRecipients([]);
-    
+    setHasSearched(false);
+
+    const willBeTeacherDoc = template.category === 'EMPLOYMENT' || template.type.includes('TEACHER');
+    setRecentRecipients(loadRecents(willBeTeacherDoc ? 'TEACHER' : 'STUDENT'));
+
     // Initialize variable inputs with defaults
     const initialInputs: Record<string, string> = {};
     template.variables.forEach((v) => {
       initialInputs[v.name] = v.defaultValue || '';
     });
     setVariableInputs(initialInputs);
-    
+
     setStep(2);
   };
 
-  // Search Students or Teachers based on Category/Type
-  const handleSearchRecipient = async () => {
-    if (!selectedTemplate) return;
-    if (searchQuery.trim().length < 2) {
-      toast({ title: 'Search query too short', description: 'Please type at least 2 characters.', variant: 'warning' });
+  // Live autocomplete search — debounced 300ms, fires automatically as the user types
+  useEffect(() => {
+    if (step !== 2 || !selectedTemplate || selectedRecipient) return;
+
+    const query = searchQuery.trim();
+    if (query.length === 0) {
+      setRecipients([]);
+      setHasSearched(false);
+      setIsSearching(false);
       return;
     }
 
     setIsSearching(true);
-    try {
-      // If template is EMPLOYMENT-based, search teachers. Otherwise search students.
-      const isTeacherDoc = selectedTemplate.category === 'EMPLOYMENT' || selectedTemplate.type.includes('TEACHER');
-      
-      if (isTeacherDoc) {
-        const response = await api.get('/faculty', { params: { firstName: searchQuery } });
-        // Mapped response (check structure of listTeachers)
-        const teachers = response.data.data.teachers || [];
-        setRecipients(teachers.map((t: any) => ({
-          id: t.id,
-          name: `${t.firstName} ${t.lastName}`,
-          subInfo: `Employee ID: ${t.employeeId} | Dept: ${t.department?.name || 'N/A'}`,
-          type: 'TEACHER',
-        })));
-      } else {
-        const response = await api.get('/students', { params: { firstName: searchQuery } });
-        const students = response.data.data.students || [];
-        setRecipients(students.map((s: any) => ({
-          id: s.id,
-          name: `${s.firstName} ${s.lastName}`,
-          subInfo: `Reg No: ${s.admissionNumber} | Class: ${s.class?.name || 'N/A'}`,
-          type: 'STUDENT',
-        })));
+    const mySeq = ++searchSeq.current;
+
+    const timer = setTimeout(async () => {
+      try {
+        let mapped: RecipientLite[] = [];
+        if (isTeacherDoc) {
+          const result = await facultyService.listTeachers({ search: query, take: 8 });
+          mapped = result.data.map((t) => ({
+            id: t.id,
+            type: 'TEACHER',
+            name: `${t.firstName} ${t.lastName}`,
+            code: t.employeeId,
+            subtitle: `${t.designation?.name || 'N/A'} · ${t.department?.name || 'N/A'}`,
+            status: t.status,
+            photoUrl: t.photoUrl,
+          }));
+        } else {
+          const result = await studentService.listStudents({ search: query, take: 8 });
+          mapped = result.data.map((s) => {
+            const enrollment = s.enrollments?.[0];
+            return {
+              id: s.id,
+              type: 'STUDENT',
+              name: `${s.firstName} ${s.lastName}`,
+              code: s.admissionNumber,
+              subtitle: enrollment ? `Class ${enrollment.class.name} · Section ${enrollment.section.name}` : 'Not enrolled',
+              status: s.status,
+              photoUrl: s.photoUrl,
+            };
+          });
+        }
+        if (mySeq === searchSeq.current) {
+          setRecipients(mapped);
+          setHasSearched(true);
+        }
+      } catch (error) {
+        if (mySeq === searchSeq.current) {
+          toast({ title: 'Search failed', variant: 'destructive' });
+          setRecipients([]);
+          setHasSearched(true);
+        }
+      } finally {
+        if (mySeq === searchSeq.current) setIsSearching(false);
       }
+    }, 300);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, isTeacherDoc, step, selectedRecipient]);
+
+  const handlePickRecipient = async (recipient: RecipientLite) => {
+    setSelectedRecipient(recipient);
+    setRecipientDetail(null);
+    setIsLoadingDetail(true);
+    try {
+      const detail = recipient.type === 'TEACHER'
+        ? await facultyService.getTeacher(recipient.id)
+        : await studentService.getStudent(recipient.id);
+      setRecipientDetail(detail);
     } catch (error) {
-      toast({ title: 'Search failed', variant: 'destructive' });
+      // Non-fatal — the summary card falls back to the lightweight search result fields.
     } finally {
-      setIsSearching(false);
+      setIsLoadingDetail(false);
     }
   };
 
-  const handleSelectRecipient = (recipient: any) => {
-    setSelectedRecipient(recipient);
-    // Proceed to Step 3
-    handleTriggerPreview(recipient.id);
+  const handleChangeRecipient = () => {
+    setSelectedRecipient(null);
+    setRecipientDetail(null);
+    setSearchQuery('');
+    setRecipients([]);
+    setHasSearched(false);
+  };
+
+  const handleContinueToDetails = () => {
+    if (!selectedRecipient) return;
+    handleTriggerPreview(selectedRecipient.id);
     setStep(3);
   };
 
@@ -149,9 +265,8 @@ export const DocumentGenerationWizard = () => {
     if (!selectedTemplate) return;
     setIsPreviewLoading(true);
     try {
-      const isTeacher = selectedTemplate.category === 'EMPLOYMENT' || selectedTemplate.type.includes('TEACHER');
       const variablesPayload: Record<string, string> = {};
-      
+
       // Map inputs to custom.* values
       Object.keys(variableInputs).forEach((key) => {
         if (key.startsWith('custom.')) {
@@ -161,15 +276,13 @@ export const DocumentGenerationWizard = () => {
         }
       });
 
-      // Query mock compiled preview from backend
+      // Query compiled preview from backend, passing the recipient ID as a top-level
+      // field so the server resolves their real name/class/guardian/etc. from the DB.
       const response = await api.post('/documents/templates/preview', {
         htmlTemplate: selectedTemplate.htmlTemplate,
         cssTemplate: selectedTemplate.cssTemplate,
-        variables: {
-          ...variablesPayload,
-          // Inject actual selected recipient IDs so preview resolves database details!
-          ...(isTeacher ? { teacherId: recipientId } : { studentId: recipientId })
-        }
+        variables: variablesPayload,
+        ...(isTeacherDoc ? { teacherId: recipientId } : { studentId: recipientId }),
       });
       setPreviewHtml(response.data);
     } catch (err) {
@@ -181,14 +294,13 @@ export const DocumentGenerationWizard = () => {
 
   const rebuildPreview = (updatedInputs: Record<string, string>) => {
     if (!selectedTemplate || !selectedRecipient) return;
-    
+
     // Quick debounce simulation for wizard typing preview
     const timer = setTimeout(async () => {
       setIsPreviewLoading(true);
       try {
-        const isTeacher = selectedTemplate.category === 'EMPLOYMENT' || selectedTemplate.type.includes('TEACHER');
         const variablesPayload: Record<string, string> = {};
-        
+
         Object.keys(updatedInputs).forEach((key) => {
           if (key.startsWith('custom.')) {
             variablesPayload[key.replace('custom.', '')] = updatedInputs[key];
@@ -200,10 +312,8 @@ export const DocumentGenerationWizard = () => {
         const response = await api.post('/documents/templates/preview', {
           htmlTemplate: selectedTemplate.htmlTemplate,
           cssTemplate: selectedTemplate.cssTemplate,
-          variables: {
-            ...variablesPayload,
-            ...(isTeacher ? { teacherId: selectedRecipient.id } : { studentId: selectedRecipient.id })
-          }
+          variables: variablesPayload,
+          ...(isTeacherDoc ? { teacherId: selectedRecipient.id } : { studentId: selectedRecipient.id }),
         });
         setPreviewHtml(response.data);
       } catch (err) {}
@@ -217,22 +327,21 @@ export const DocumentGenerationWizard = () => {
     if (!selectedTemplate || !selectedRecipient) return;
     setIsGenerating(true);
     try {
-      const isTeacher = selectedTemplate.category === 'EMPLOYMENT' || selectedTemplate.type.includes('TEACHER');
-      
       const payload: any = {
         templateId: selectedTemplate.id,
         variables: variableInputs,
       };
 
-      if (isTeacher) {
+      if (isTeacherDoc) {
         payload.teacherId = selectedRecipient.id;
       } else {
         payload.studentId = selectedRecipient.id;
       }
 
       const doc = await documentService.generateDocument(payload);
+      pushRecent(selectedRecipient);
       setGeneratedDoc(doc);
-      toast({ title: 'Document Issued', description: `Credential ${doc.documentNumber} issued successfully.` });
+      toast({ title: 'Document Generated', description: `Credential ${doc.documentNumber} issued successfully.` });
       setStep(4);
     } catch (error: any) {
       toast({
@@ -265,29 +374,59 @@ export const DocumentGenerationWizard = () => {
     }
   };
 
+  const renderRecipientCard = (recipient: RecipientLite, onSelect: () => void) => (
+    <div
+      key={`${recipient.type}-${recipient.id}`}
+      className="flex items-center gap-3 p-3 border border-border rounded-xl bg-card hover:border-primary/50 hover:shadow-sm transition-all"
+    >
+      <div className="h-11 w-11 rounded-full bg-secondary shrink-0 overflow-hidden flex items-center justify-center border border-border/60">
+        {recipient.photoUrl ? (
+          <img src={recipient.photoUrl} alt={recipient.name} className="h-full w-full object-cover" />
+        ) : (
+          <UserRound className="h-5 w-5 text-muted-foreground" />
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5">
+          <p className="font-semibold text-sm text-foreground truncate">{recipient.name}</p>
+          <Badge variant={statusVariant(recipient.status)} className="text-[9px] py-0 px-1.5 shrink-0">
+            {recipient.status}
+          </Badge>
+        </div>
+        <p className="text-xs text-muted-foreground truncate">
+          {recipient.type === 'TEACHER' ? 'Employee ID' : 'Admission No'}: {recipient.code} · {recipient.subtitle}
+        </p>
+      </div>
+      <Button variant="outline" size="sm" onClick={onSelect} className="h-8 text-xs cursor-pointer shrink-0">
+        Select
+      </Button>
+    </div>
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
           Credential Generation Wizard
         </h1>
         <p className="text-sm text-muted-foreground">
-          Centralized ERP document builder. Select template, verify recipient, adjust parameters, and print.
+          Pick a design, find the recipient, and generate a print-ready certificate in a few clicks.
         </p>
       </div>
 
       {/* Progress Steps Header */}
       <div className="flex items-center gap-2 bg-card border border-border p-4 rounded-xl shadow-sm">
-        {['Choose Design', 'Choose Recipient', 'Fill Details', 'Generate'].map((sName, idx) => {
+        {STEPS.map((s, idx) => {
           const sNum = idx + 1;
           const isActive = step === sNum;
           const isCompleted = step > sNum;
+          const StepIcon = s.icon;
 
           return (
-            <div key={sName} className="flex items-center gap-2 flex-1 justify-center">
+            <div key={s.label} className="flex items-center gap-2 flex-1 justify-center">
               <span
-                className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-md shadow-primary/15'
                     : isCompleted
@@ -295,12 +434,12 @@ export const DocumentGenerationWizard = () => {
                     : 'bg-secondary text-muted-foreground'
                 }`}
               >
-                {isCompleted ? '✓' : sNum}
+                {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : <StepIcon className="h-3.5 w-3.5" />}
               </span>
               <span className={`text-xs font-semibold hidden md:inline ${isActive ? 'text-primary' : 'text-muted-foreground'}`}>
-                {sName}
+                {s.label}
               </span>
-              {idx < 3 && <ChevronRight className="h-4 w-4 text-muted-foreground/35" />}
+              {idx < STEPS.length - 1 && <ChevronRight className="h-4 w-4 text-muted-foreground/35" />}
             </div>
           );
         })}
@@ -366,54 +505,164 @@ export const DocumentGenerationWizard = () => {
         <Card>
           <CardHeader className="flex flex-row justify-between items-start">
             <div>
-              <CardTitle>Select Recipient Target</CardTitle>
+              <CardTitle>{isTeacherDoc ? 'Find a Staff Member' : 'Find a Student'}</CardTitle>
               <CardDescription>
-                Search and select the recipient (Student / Teacher) for the document.
+                {selectedRecipient
+                  ? 'Confirm the recipient below, then continue.'
+                  : 'Search by name, admission number, roll number, or guardian details — results appear as you type.'}
               </CardDescription>
             </div>
             <Button variant="outline" size="sm" onClick={() => setStep(1)} className="cursor-pointer">
               Change Template
             </Button>
           </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={
-                  selectedTemplate.category === 'EMPLOYMENT'
-                    ? 'Search Teacher by First Name (at least 2 chars)...'
-                    : 'Search Student by First Name (at least 2 chars)...'
-                }
-                onKeyDown={(e) => e.key === 'Enter' && handleSearchRecipient()}
-              />
-              <Button onClick={handleSearchRecipient} disabled={isSearching} className="gap-1 cursor-pointer">
-                <Search className="h-4 w-4" /> {isSearching ? 'Searching...' : 'Search'}
-              </Button>
-            </div>
-
-            {recipients.length > 0 ? (
-              <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
-                {recipients.map((rec) => (
-                  <div
-                    key={rec.id}
-                    onClick={() => handleSelectRecipient(rec)}
-                    className="p-3 hover:bg-secondary/40 flex justify-between items-center cursor-pointer transition-colors"
-                  >
-                    <div>
-                      <p className="font-semibold text-sm text-foreground">{rec.name}</p>
-                      <p className="text-xs text-muted-foreground">{rec.subInfo}</p>
-                    </div>
-                    <Button variant="outline" size="sm" className="h-8 text-xs cursor-pointer">
-                      Select Recipient
-                    </Button>
+          <CardContent className="space-y-4">
+            {selectedRecipient ? (
+              /* --- Selected Recipient Summary Card --- */
+              <div className="border border-primary/30 bg-primary/5 rounded-xl p-4">
+                <div className="flex items-center gap-2 text-emerald-600 text-xs font-bold mb-3">
+                  <CheckCircle2 className="h-4 w-4" /> Selected Recipient
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="h-16 w-16 rounded-full bg-secondary shrink-0 overflow-hidden flex items-center justify-center border border-border/60">
+                    {selectedRecipient.photoUrl ? (
+                      <img src={selectedRecipient.photoUrl} alt={selectedRecipient.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <UserRound className="h-7 w-7 text-muted-foreground" />
+                    )}
                   </div>
-                ))}
+                  <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs">
+                    <div className="col-span-2 sm:col-span-3">
+                      <p className="text-foreground font-bold text-base leading-tight">{selectedRecipient.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">{isTeacherDoc ? 'Employee ID' : 'Admission No'}</p>
+                      <p className="font-semibold text-foreground font-mono">{selectedRecipient.code}</p>
+                    </div>
+                    {!isTeacherDoc && recipientDetail?.enrollments?.[0] && (
+                      <>
+                        <div>
+                          <p className="text-muted-foreground">Class</p>
+                          <p className="font-semibold text-foreground">{recipientDetail.enrollments[0].class.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Section</p>
+                          <p className="font-semibold text-foreground">{recipientDetail.enrollments[0].section.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Academic Year</p>
+                          <p className="font-semibold text-foreground">{recipientDetail.enrollments[0].academicYear.label}</p>
+                        </div>
+                      </>
+                    )}
+                    {!isTeacherDoc && recipientDetail?.guardians?.[0] && (
+                      <div>
+                        <p className="text-muted-foreground">Guardian</p>
+                        <p className="font-semibold text-foreground">{recipientDetail.guardians[0].fullName}</p>
+                      </div>
+                    )}
+                    {isTeacherDoc && recipientDetail && (
+                      <>
+                        <div>
+                          <p className="text-muted-foreground">Department</p>
+                          <p className="font-semibold text-foreground">{recipientDetail.department?.name || 'N/A'}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Designation</p>
+                          <p className="font-semibold text-foreground">{recipientDetail.designation?.name || 'N/A'}</p>
+                        </div>
+                      </>
+                    )}
+                    <div>
+                      <p className="text-muted-foreground">Status</p>
+                      <Badge variant={statusVariant(selectedRecipient.status)} className="text-[10px] py-0 px-1.5 mt-0.5">
+                        {selectedRecipient.status}
+                      </Badge>
+                    </div>
+                    {isLoadingDetail && (
+                      <div className="col-span-2 sm:col-span-3 text-muted-foreground flex items-center gap-1.5">
+                        <div className="animate-spin rounded-full h-3 w-3 border-2 border-t-primary border-r-transparent border-b-primary border-l-transparent" />
+                        Loading full profile...
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 mt-4 pt-3 border-t border-border/30">
+                  <Button variant="outline" size="sm" onClick={handleChangeRecipient} className="cursor-pointer">
+                    Change {isTeacherDoc ? 'Staff' : 'Student'}
+                  </Button>
+                  <Button size="sm" onClick={handleContinueToDetails} className="gap-1.5 cursor-pointer font-semibold">
+                    Continue <ChevronRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-            ) : searchQuery.trim().length >= 2 && !isSearching ? (
-              <div className="text-center py-6 text-muted-foreground text-xs">No records found. Try a different query.</div>
-            ) : null}
+            ) : (
+              <>
+                {/* --- Live Autocomplete Search --- */}
+                <div className="relative">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/60" />
+                  <Input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={
+                      isTeacherDoc
+                        ? 'Search staff by name, employee ID, or phone...'
+                        : 'Search student by name, admission number, or guardian...'
+                    }
+                    className="pl-10 h-11"
+                    autoFocus
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                  {isSearching && (
+                    <div className="absolute right-9 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-t-primary border-r-transparent border-b-primary border-l-transparent" />
+                    </div>
+                  )}
+                </div>
+
+                {searchQuery.trim().length === 0 ? (
+                  <>
+                    {recentRecipients.length > 0 ? (
+                      <div className="space-y-2">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          <History className="h-3.5 w-3.5" /> Recent Recipients
+                        </p>
+                        <div className="space-y-2">
+                          {recentRecipients.map((r) => renderRecipientCard(r, () => handlePickRecipient(r)))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-10 text-muted-foreground text-sm">
+                        <UserSearch className="h-8 w-8 mx-auto mb-2 opacity-40" />
+                        Start typing a {isTeacherDoc ? "staff member's" : "student's"} name or {isTeacherDoc ? 'employee' : 'admission'} number.
+                      </div>
+                    )}
+                  </>
+                ) : recipients.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Results</p>
+                    <div className="space-y-2">
+                      {recipients.map((r) => renderRecipientCard(r, () => handlePickRecipient(r)))}
+                    </div>
+                  </div>
+                ) : hasSearched && !isSearching ? (
+                  <div className="text-center py-10 text-muted-foreground text-sm space-y-2">
+                    <p>No matching {isTeacherDoc ? 'staff' : 'students'} found for "{searchQuery}".</p>
+                    <p className="text-xs">
+                      Try searching by {isTeacherDoc ? 'employee ID or phone' : 'admission number, roll number, or guardian phone'}.
+                    </p>
+                  </div>
+                ) : null}
+              </>
+            )}
           </CardContent>
         </Card>
       )}
